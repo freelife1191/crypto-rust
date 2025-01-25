@@ -1,0 +1,28 @@
+[package]
+name = "crypto"
+version = "0.0.1"
+edition = "2021"
+rust-version = "1.83"
+
+[lib]
+crate-type = ["cdylib"]
+name = "crypto"
+
+[dependencies]
+# build
+#jni-sys = "*"
+#anyhow = "1.0"
+#futures-core = "0.3.30"
+#walkdir = "2.5.0"
+log = "0.4"
+crypto-lib = { path = "../crypto-lib" }
+
+[build-dependencies]
+flapigen = { path = "../flapigen" } # JDK6 빌드 전용
+#flapigen = "0.8"
+env_logger = "0.11"
+bindgen = { version = "0.71", default-features = false, features = ["logging", "runtime", "which-rustfmt"] }
+walkdir = "2"
+#rifgen = "*"
+
+[features]

@@ -1,0 +1,41 @@
+// src/java_glue.rs.in
+
+use std::path::Path;
+// use crate::error::crypto_error::{CryptoError, CryptoResult};
+// use crate::util::crypto_util::*;
+// use crate::domain::crypto_config::*;
+// use crate::domain::crypto_cipher_spec::*;
+use crypto_lib::session::crypto_session::CryptoSession;
+
+use crate::jni_c_header::*;
+
+foreign_class!(class CryptoSession {
+    self_type CryptoSession;
+    constructor CryptoSession::create(path: &Path) -> Result<CryptoSession, String>;
+    constructor CryptoSession::of_byte(bytes: &[u8]) -> Result<CryptoSession, String>;
+    constructor CryptoSession::of(aws_kms_key: String, access_key_id: String, secret_access_key: String, seed: String, credential: String) -> Result<CryptoSession, String>;
+    constructor CryptoSession::of_local(key: String, iv: String, seed: String, credential: String) -> Result<CryptoSession, String>;
+    fn CryptoSession::encrypt(&self, plaintext: String) -> Result<String, String>;
+    fn CryptoSession::decrypt(&self, encrypted: String) -> Result<String, String>;
+    foreign_code r#"
+        static {
+            try {
+                NativeUtils.loadLibraryFromJar();
+            } catch (java.io.IOException e) {
+                e.printStackTrace();
+            }
+        }"#;
+});
+
+/*
+foreign_typemap!(
+    ($p:r_type) CryptoError => jni::errors::Error {
+        ($p:r_type) => {
+            jni::errors::Error::from(CryptoError::new($p))
+        },
+        ($p:f_type) => {
+            jni::errors::Error::from(CryptoError::new($p))
+        }
+    }
+);
+*/

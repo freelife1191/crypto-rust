@@ -1,0 +1,12 @@
+# Ignore Gradle project-specific cache directory
+
+
+# Ignore Gradle build output directory
+*.java
+!CryptoException.java
+!JsonUtils.java
+!NativeUtils.java
+!Library.java
+!CryptoTest.java
+!LibraryTest.java
+!InternalPointerMarker.java

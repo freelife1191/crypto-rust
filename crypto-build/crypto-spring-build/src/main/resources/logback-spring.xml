@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <property name="LOG_FILE" value="${LOG_FILE:-${LOG_PATH:-${LOG_TEMP:-${java.io.tmpdir:-/tmp}}}/spring.log}" />
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+    <include resource="org/springframework/boot/logging/logback/file-appender.xml" />
+
+    <logger name="org.springframework" level="info" />
+    <logger name="org.springframework.web" level="info" />
+    <logger name="org.springframework.web.filter" level="info" />
+    <logger name="org.springframework.security.web.context" level="info" />
+    <logger name="org.springframework.web.servlet.mvc.method.annotation" level="info" />
+    <logger name="org.springframework.security.web" level="info" />
+
+    <logger name="org.springframework.boot.context.ApplicationPidFileWriter" level="trace" />
+    <logger name="com.zaxxer.hikari" level="info" />
+    <logger name="org.mybatis" level="info"/>
+    <logger name="org.apache.commons.beanutils.converters.StringConverter" level="info" />
+    <logger name="software.amazon.awssdk" level="info" />
+
+    <!-- 불필요한 로그 OFF 처리 -->
+    <logger name="org.springframework.security.web.firewall.RequestRejectedException" level="OFF"/>
+    <logger name="org.springframework.web.context.request.async.AsyncRequestNotUsableException" level="OFF"/>
+
+    <logger name="de.codecentric" level="info" />
+
+    <logger name="jdbc" level="ERROR" />
+    <logger name="jdbc.sqlonly" level="OFF" />
+    <logger name="jdbc.sqltiming" level="INFO" />
+    <logger name="jdbc.audit" level="OFF" />
+    <logger name="jdbc.resultset" level="OFF" />
+    <logger name="jdbc.resultsettable" level="INFO" />
+    <logger name="jdbc.connection" level="OFF" />
+
+    <logger name="com.mysql" level="info" />
+    <logger name="com.freelife" level="info"/>
+
+    <!-- <springProfile name="local,dev"> -->
+    <!--     <logger name="com.mysql" level="debug" /> -->
+    <!--     <logger name="com.freelife" level="debug"/> -->
+    <!-- </springProfile> -->
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>

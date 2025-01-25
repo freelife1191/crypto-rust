@@ -1,0 +1,50 @@
+[package]
+name = "crypto-lib"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.83"
+
+[dependencies]
+log = "^0.4"
+
+# crypto-rust library
+aes = "0.8"
+cbc = "0.1"
+#cipher = "0.4"
+#hex-literal = "0.4"
+hex = "0.4"
+rand = "0.9.0-alpha.2"
+#rand_core = "0.6"
+sha2 = "0.10"
+md5 = "0.7"
+base64 = "0.22"
+generic-array = "1.1"
+block-padding = "0.4.0-rc.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_with = "3.9"
+thiserror = "1.0"
+
+# aws kms
+aws-config = { version = "1.5", features = ["behavior-version-latest"] }
+aws-sdk-kms = { version = "1.4" }
+tokio = { version = "1.39", features = ["full"] }
+ring = "0.17"
+
+# build
+#rifgen = "*"
+#jni-sys = "*"
+#anyhow = "1.0"
+#futures-core = "0.3.30"
+walkdir = "2"
+aes-gcm = "0.10"
+hmac = "0.12.1"
+
+[features]
+#default = ["block-padding", "base64", "hex"]
+default = ["base64", "hex"]
+#alloc = ["cipher/alloc"]
+#std = ["cipher/std", "alloc"]
+#block-padding = ["cipher/block-padding"]
+base64 = ["serde_with/base64"]
+hex = ["serde_with/hex"]

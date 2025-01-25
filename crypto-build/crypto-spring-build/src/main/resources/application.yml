@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: crypto-spring-test
+logging:
+  level:
+    root: info
+    com.freelife: debug

@@ -1,0 +1,48 @@
+# rustup toolchain install stable-aarch64-unknown-linux-gnu --force-non-host
+# CROSS_CONTAINER_ENGINE=podman CROSS_DEBUG=1 CROSS_CONTAINER_ENGINE_NO_BUILDKIT=1 cross build --target aarch64-unknown-linux-gnu --release
+#[target.aarch64-unknown-linux-gnu]
+#dockerfile = "./docker/Dockerfile.aarch64-unknown-linux-gnu"
+#image = ":edge"
+#pre-build = [                                  # additional commands to run prior to building the package
+#    "tar -zxvf openjdk-21.0.2_linux-aarch64_bin.tar.gz && mkdir -p /usr/lib/jvm && mv jdk-21.0.2 /usr/lib/jvm/java-21-openjdk-arm64",
+#]
+
+[target.aarch64-unknown-linux-gnu.dockerfile]
+file = "Dockerfile.aarch64-unknown-linux-gnu"
+context = "./docker"
+
+[target.aarch64-unknown-linux-gnu.env]
+passthrough = [
+    "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-arm64"
+]
+
+
+# JDK7 빌드시 사용
+#[target.x86_64-unknown-linux-gnu.dockerfile]
+#zig="2.12"
+#file = "Dockerfile.x86_64-unknown-linux-gnu"
+#context = "./docker"
+
+# cross build
+# CROSS_CONTAINER_ENGINE=podman CROSS_CONTAINER_ENGINE_NO_BUILDKIT=1 cross build --target x86_64-unknown-linux-gnu --release
+[target.x86_64-unknown-linux-gnu]
+zig="2.12"
+pre-build = [                                  # additional commands to run prior to building the package
+    "apt-get update && apt-get install -y openjdk-21-jdk"
+]
+
+[target.x86_64-unknown-linux-gnu.env]
+passthrough = [
+    "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64"
+#    "JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64"
+]
+
+# CROSS_CONTAINER_ENGINE=podman CROSS_DEBUG=1 CROSS_CONTAINER_ENGINE_NO_BUILDKIT=1 cross build --target x86_64-pc-windows-gnu --release
+[target.x86_64-pc-windows-gnu.dockerfile]
+file = "Dockerfile.x86_64-pc-windows-gnu"
+context = "./docker"
+
+[target.x86_64-pc-windows-gnu.env]
+passthrough = [
+    "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64",
+]

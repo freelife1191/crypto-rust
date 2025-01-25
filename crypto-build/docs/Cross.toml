@@ -1,0 +1,99 @@
+# BUILD
+# -----
+# 모든 대상에 대한 빌드 구성을 설정합니다.
+
+[build]
+# 사전 빌드된 표준 라이브러리가 없는 대상을 교차 컴파일할 때 xargo를 사용합니다.
+# 대부분 대상에 대해 `build-std`를 선호합니다. 이
+#에는 nightly가 필요합니다.
+xargo = true
+# 사전 빌드된 표준 라이브러리가 없는 대상을 교차 컴파일할 때 `-Zbuild-std`를 사용합니다.
+# 이것은 `xargo`를 재정의합니다. 활성화된 경우
+# `xargo`가 사용되지 않습니다.
+build-std = true
+# `--target` 또는 `CARGO_BUILD_TARGET`를 통해 대상이 제공되지 않는 경우 빌드할 기본 대상입니다.
+# default-target = "x86_64-unknown-linux-gnu"
+# 패키지를 빌드하기 전에 실행할 추가 명령입니다.
+# 이러한 명령은 cross를 실행하기 전에 Docker
+# 이미지에 추가할 RUN 명령으로 변환됩니다.
+pre-build = [
+    "dpkg --add-architecture $CROSS_DEB_ARCH",
+    "apt-get update && apt-get install --assume-yes libssl-dev:$CROSS_DEB_ARCH"
+]
+# 모든 대상에 사용할 사용자 지정 Dockerfile입니다. 이는
+# 구조체 또는 문자열로 제공될 수 있습니다. 구조체 변형에 대한 대상은 아래를 참조하세요. 두 사전 빌드 후크 모두 사용자 지정
+# Dockerfile을 제공할 수 있습니다. 사전 빌드 후크는 Dockerfile의 끝에 추가됩니다.
+# dockerfile = "Dockerfile"
+
+# 빌드 환경
+# -----------------
+# 모든 대상에 대한 빌드 환경을 설정합니다.
+
+[build.env]
+# 환경 변수의 값을 통해 전달되는 마운트될 볼륨입니다. 이는
+# 마운트 지점과 환경 변수로 컨테이너에 전달됩니다. 예를 들어,
+# `VOL2_ARG` 경로는 `$VOL2_ARG`로 사용할 수 있으며
+# 경로는 `/path/to/volume`에 마운트됩니다.
+# 볼륨 경로를 포함하는 환경 변수의 값을 제공할 수 있습니다.
+volumes = ["VOL1_ARG", "VOL2_ARG=/path/to/volume"]
+# 컨테이너로 전달할 환경 변수입니다.
+# 환경 변수의 값을 제공할 수 있습니다.
+passthrough = ["VAR1_ARG", "VAR2_ARG=VALUE"]
+
+# TARGET
+# ------
+# 단일 대상에 대한 빌드 구성을 설정합니다. 이
+# 값은 `[build]`에 있는 값을 재정의합니다.
+
+[target.aarch64-unknown-linux-gnu]
+# `aarch64-unknown-linux-gnu`에 대해서만 xargo를 비활성화합니다.
+xargo = false
+# 또한 `aarch64-unknown-linux-gnu`에 대해 `build-std`를 비활성화합니다.
+# 이미 std 라이브러리가 미리 빌드되어 있기 때문입니다.
+build-std = true
+# 기본 러너를 재정의하는 선택적 러너입니다.
+# 예를 들어, Qemu 또는 바이너리에 대한 네이티브 러너를 사용할 수 있습니다.
+# 네이티브가 아닌 바이너리의 경우 `qemu-user`로 기본 설정되고, 네이티브 바이너리의 경우 `native`로 기본 설정됩니다.
+runner = "qemu-user"
+# 빌드 명령을 실행할 `cross`의 사용자 지정 Docker 이미지입니다.
+# 이 이미지는 미리 빌드되어야 하며
+# 사전 빌드 후크를 재정의합니다.
+image = "repository:tag"
+# 패키지를 빌드하기 전에 실행할 추가 명령입니다.
+# 이러한 명령은 `[build]`에 있는 명령을 재정의합니다. 이러한 명령은
+# 병합되지 않습니다.
+pre-build = [
+    "dpkg --add-architecture $CROSS_DEB_ARCH",
+    "apt-get update && apt-get install --assume-yes libssl-dev:$CROSS_DEB_ARCH",
+    "echo -e '#!/bin/bash\necho test' > /usr/bin/test-echo",
+    "chmod +x /usr/bin/test-echo"
+]
+
+# 이 특정 대상에 대한 사용자 지정 Dockerfile입니다. 이는
+# 문자열로도 제공될 수 있습니다(`build.dockerfile` 참조).
+[target.aarch64-unknown-linux-gnu.dockerfile]
+# `Cargo.toml`에 상대적으로 사용할 dockerfile
+# 반드시 제공해야 합니다.
+file = "Dockerfile"
+# 빌드 스크립트에 대한 컨텍스트 디렉토리입니다. 이는
+# 모든 COPY가 실행되는 디렉토리이며 Docker는 이 빌드 컨텍스트 외부의 파일에 액세스할 수 없습니다. 디렉토리의 전체 내용은
+# Docker 데몬으로 전송되므로, 소수의 파일이 있는 컨텍스트를 사용해 보세요.
+# https://docs.docker.com/engine/reference/builder/#usage
+context = "."
+# 빌드 스크립트에 전달할 추가 인수.
+# https://docs.docker.com/engine/reference/builder/#arg
+build-args = { ARG1 = "foo" }
+
+# 대상 환경
+# ------------------
+# 단일 대상에 대한 빌드 구성을 설정합니다. 이
+# 값은 `[build]`에 있는 값을 재정의합니다.
+
+[target.aarch64-unknown-linux-gnu.env]
+# 컨테이너에 마운트할 볼륨입니다. 제공된 경우 이
+# 값은 `build.env.volumes`에 지정된 볼륨을 재정의합니다.
+volumes = ["VOL3_ARG", "VOL4_ARG=/path/to/vol4"]
+# 컨테이너로 전달할 환경 변수.
+# 이것들은 `build.env.passthrough`에 지정된 환경 변수와 병합됩니다. 이 동작은 `v0.3.0`에서
+# 변경될 것이며, 여기서 `build.env.passthrough` 값을 재정의합니다.
+passthrough = ["VAR1_ARG", "VAR2_ARG=VALUE"]

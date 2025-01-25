@@ -1,0 +1,119 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.freelife'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+compileJava {
+    options.compilerArgs << '-parameters'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+    querydsl.extendsFrom compileClasspath
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+/*
+tasks.register("get-auth-token", Exec) {
+    commandLine 'aws', 'codeartifact', 'get-authorization-token', '--domain', 'crypto-dev-repo', '--domain-owner', '100000000000', '--profile', 'session', '--region', 'ap-northeast-1', '--query', 'authorizationToken', '--output', 'text'
+    standardOutput = new ByteArrayOutputStream()
+    doLast {
+        def authToken = standardOutput.toString().trim()
+        // project.property("CODEARTIFACT_AUTH_TOKEN", authToken)
+        project.ext.set("CODEARTIFACT_AUTH_TOKEN", authToken)
+        println("CODEARTIFACT_AUTH_TOKEN: "+project.ext.get("CODEARTIFACT_AUTH_TOKEN"))
+    }
+}
+
+tasks.register("print-task") {
+    dependsOn tasks.named("get-auth-token")
+    doLast {
+        println("System.getenv(\"CODEARTIFACT_AUTH_TOKEN\"):" + System.getenv("CODEARTIFACT_AUTH_TOKEN"))
+        println("project.getProperties()[\"CODEARTIFACT_AUTH_TOKEN\"]: " + project.getProperties()["CODEARTIFACT_AUTH_TOKEN"])
+        println("project.ext.get(\"CODEARTIFACT_AUTH_TOKEN\"): " + project.ext.get("CODEARTIFACT_AUTH_TOKEN"))
+        println("System.getProperty(\"CODEARTIFACT_AUTH_TOKEN\")" + System.getProperty("CODEARTIFACT_AUTH_TOKEN"))
+        println("System.getenv()" + System.getenv())
+    }
+}
+
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile).configureEach {
+        dependsOn tasks.named("get-auth-token")
+        dependsOn tasks.named("print-task")
+    }
+}
+*/
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    // implementation 'com.freelife.crypto:crypto-core:0.0.1.RC1'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // Database
+    // runtimeOnly 'com.h2database:h2'
+    // runtimeOnly 'com.mysql:mysql-connector-j'
+    //
+    // // JPA
+    // implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    //
+    // // Mybatis
+    // implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
+    // testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.3'
+    //
+    // // Utils
+    implementation 'com.google.guava:guava:33.3.1-jre'
+    implementation 'org.apache.commons:commons-collections4:4.4'
+    implementation 'org.apache.commons:commons-lang3:3.17.0'
+    //
+    // // Swagger
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.3'
+    //
+    // // Log 설정
+    // implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
+    //
+    // // QueryDSL 설정
+    // // https://github.com/404-nut-pound/spring-jpa-querydsl-template
+    // implementation "com.querydsl:querydsl-jpa:5.1.0:jakarta"
+    // annotationProcessor "com.querydsl:querydsl-apt:5.1.0:jakarta"
+    // annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+    // annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+    // implementation "com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.2"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        events "PASSED", "SKIPPED", "FAILED", "STANDARD_OUT", "STANDARD_ERROR"
+    }
+    // exclude '**/**'
+}

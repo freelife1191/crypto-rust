@@ -1,0 +1,6 @@
+FROM ghcr.io/cross-rs/x86_64-pc-windows-gnu:edge
+RUN apt-get update && apt-get -y install zip unzip
+RUN curl -O https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_windows-x64_bin.zip
+RUN unzip openjdk-21.0.2_windows-x64_bin.zip
+RUN mkdir -p /usr/lib/jvm
+RUN mv jdk-21.0.2 /usr/lib/jvm/java-21-openjdk-amd64
