@@ -1,4 +1,29 @@
-# Encryption Algorithm
+# Encryption Solution Algorithm & Structure
+
+<!-- TOC -->
+* [Encryption Solution Algorithm & Structure](#encryption-solution-algorithm--structure)
+  * [Encryption Config Generation](#encryption-config-generation)
+    * [1. seed_byte Generation](#1-seed_byte-generation)
+    * [2. Credential Key Generation](#2-credential-key-generation)
+    * [3. Credential IV Generation](#3-credential-iv-generation)
+    * [4. seed Encryption](#4-seed-encryption)
+      * [AWS 타입](#aws-타입)
+      * [LOCAL 타입](#local-타입)
+    * [5. Credential Generation](#5-credential-generation)
+    * [6. Credential Encryption](#6-credential-encryption)
+      * [AWS 타입](#aws-타입-1)
+      * [LOCAL 타입](#local-타입-1)
+    * [8. Config Generation](#8-config-generation)
+  * [Encryption Algorithm Usage](#encryption-algorithm-usage)
+    * [1. Loading Config & Creation Session](#1-loading-config--creation-session)
+    * [2. Seed Decryption](#2-seed-decryption)
+      * [AWS 타입](#aws-타입-2)
+      * [LOCAL 타입](#local-타입-2)
+    * [3. Credential Generation](#3-credential-generation)
+    * [4. Credential IV Generation](#4-credential-iv-generation)
+    * [5. Credential Decryption](#5-credential-decryption)
+    * [6. Encryption/Decryption](#6-encryptiondecryption)
+<!-- TOC -->
 
 ## Encryption Config Generation
 
@@ -83,13 +108,13 @@
 
 암호화 솔루션 사용시 처리 과정
 
-## 1. Loading Config & Creation Session
+### 1. Loading Config & Creation Session
 
 Config 파일을 로드하여 설정 정보를 읽어들여 암호화 솔루션 세션을 생성한다
 
 설정 정보를 읽어들여 **Credential** 데이터를 복호화하고 **Cipher Spec** 정보를 얻어 데이터 암/복호화를 수행한다
 
-## 2. Seed Decryption
+### 2. Seed Decryption
 
 #### AWS 타입
 **AWS KMS** 로 `seed_byte` 를 복호화 함, KMS 키와 `AWS ACCESS KEY`, `AWS SECRET ACCESS KEY`로 AWS KMS 에 접속해 세션을 만들고    
