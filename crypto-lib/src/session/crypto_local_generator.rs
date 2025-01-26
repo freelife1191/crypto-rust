@@ -24,6 +24,7 @@ mod crypto_config_generator {
             let kms_service = AwsKmsService::get_kms_service(config.clone());
             let cipher_vec = kms_service.encrypt(&seed_byte)
                 .map_err(|e| format!("{:?}", e))?; // seed_base64
+            //let seed_hex = "0102020078eaeb9a15eee4a08a9ca09c1f94ff682c9ffb8ff4b3a80a7bbee8bdb8c4b373d701229b983282ac6a42f5760fdb95b90dbf0000006e306c06092a864886f70d010706a05f305d020100305806092a864886f70d010701301e060960864801650304012e3011040c10a0b9a8325906f8b37150df020110802ba94e0e7bde2e171e1c7aa4f5544b203d5f75c874e3911cc292595ef79286377b9c15880a29e8f112d8f577".as_bytes();
             Ok(cipher_vec) // seed_base64
         } else {
             let seed_hex = hex::encode(seed_byte);
@@ -57,6 +58,9 @@ mod crypto_config_generator {
         let cred_iv_vec = crypto_util::digest("MD5", &seed_byte, 10)
             .map_err(|e| format!("{:?}", e)).unwrap();
         println!("cred_key_vec: {:?}, cred_iv_vec: {:?}", hex::encode(cred_key_vec.clone()), hex::encode(cred_iv_vec.clone()));
+        //println!("cred key hex length: {:?}, iv hex length: {:?}", hex::encode(cred_key_vec.clone()).len(), hex::encode(cred_iv_vec.clone()).len());
+        //println!("cred key: {:?}, iv: {:?}", cred_key_vec, cred_iv_vec);
+        //println!("cred key length: {:?}, iv length: {:?}", cred_key_vec.len(), cred_iv_vec.len());
 
         let key = crypto_config.clone().key.unwrap_or_else(|| hex::encode(cred_key_vec.clone()));
         let iv = crypto_config.clone().iv.unwrap_or_else(|| hex::encode(cred_iv_vec.clone()));
@@ -272,6 +276,7 @@ mod crypto_config_generator {
         // 3. 평문 (Plaintext) 정의
         // let plaintext = "424287d41814926e0505920e5e8d0a1f88d7cc66a0413f900a5b55c9c07394a6c73778bdd28fb468b9675771a6bc714469f25349ac64cc5fdd747442a0caf95ace61494c539fd8e53cf40212".as_bytes();
         let plaintext = "9c31d1e25ddd5ba6d48e00e6e8042a0b024a081c5b6027cd2cfb64c0ea4b2533e7e6b5b327b155a75dceb4c7557d66ea655cb2887f112cbab0c9c5029429a0106b18e8c1f20e656e9358bc17".as_bytes();
+        let plaintext = "701c692edfff3532a74f90235b3e047b487c9dab05890688c930f0a30dff3c68e9c06a0d6c108bc6c09c789727fe79a88fb1643e2f8cb47ad2256d207ad602eacc91f9cd5e95d178a0d5e238".as_bytes();
 
         let cipher_vec = encode_aes_256_gcm(plaintext, key.as_slice(), iv.as_slice()).unwrap();
         println!("암호화된 데이터: {}", encode_base64(cipher_vec.as_ref()));
