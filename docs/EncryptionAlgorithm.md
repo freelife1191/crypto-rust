@@ -68,12 +68,12 @@
 
 위에서 생성된 데이터 중 `key`, `iv`, `seed`, `credential` 값을 Config 파일로 생성한다
 
-- key: `seed` 암/복호화 및 데이터 암/복호화에 사용되는 **Secret Key**
-- iv: `seed` 암/복호화 및 데이터 암/복호화에 사용되는 **IV(Initialization Vector)**
-- seed: `seed_byte` 를 암호화한 값
+- `key`: `seed` 암/복호화 및 데이터 암/복호화에 사용되는 **Secret Key**
+- `iv`: `seed` 암/복호화 및 데이터 암/복호화에 사용되는 **IV(Initialization Vector)**
+- `seed`: `seed_byte` 를 암호화한 값
   - `AWS TYPE`의 경우 `AWS KMS`로 `seed_byte`를 암호화 데이터
   - `LOCAL TYPE`의 경우 `LOCAL` 환경에서 **Secret Key**와 **IV**로 AES-256-GCM 대칭 알고리즘으로 `seed_byte`를 암호화한 데이터
-- credential
+- `credential`
   - **Credential Key**와 **Credential IV**로 **Cipher Spec** 데이터를 `AES256-CBC-PKCS7` 대칭 알고리즘으로 암호화한 데이터
   - 결론적으로 해당 암호화 솔루션은 `credential` 데이터를 복호화 한 **Cipher Spec** 으로 데이터 암/복호화를 수행한다
 
