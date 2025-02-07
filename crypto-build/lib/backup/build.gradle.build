@@ -1,3 +1,41 @@
+def javaVersion = project.findProperty("javaVersion") ?: ""
+// archivesBaseName = "enigma" + suffix
+// println("📦 Building JAR: ${archivesBaseName}.jar")
+
+// JAVA 버전 확인
+// javap -verbose -cp lib.jar com/freelife/crypto/core/CryptoSession | grep "major\|minor"
+def minorVersion = javaVersion == "8" ? 8 : 11
+def majorVersion = javaVersion == "8" ? 8 : 21  // JDK 8을 명시하면 8로 설정
+
+// Apply a specific Java toolchain to ease working on different environments.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(majorVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    if (javaVersion == "8") {
+        // JDK 8로 컴파일 설정
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
+        options.compilerArgs = ['-source', '1.8', '-target', '1.8']
+    } else {
+        options.release.set(minorVersion) // 최소 실행 가능 버전 설정
+    }
+}
+
+println("Compiling with minor Java version: ${minorVersion}")
+println("Compiling with major Java version: ${majorVersion}")
+
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
+    testLogging {
+        events "PASSED", "SKIPPED", "FAILED", "STANDARD_OUT", "STANDARD_ERROR"
+    }
+}
+
 // Append to `lib/build.gradle`
 // def rustBasePath = ".."
 // def rustBasePath = project.projectDir // 현재 프로젝트 경로
@@ -99,19 +137,17 @@ tasks.create(name: "rust-deploy", type: Sync, dependsOn: "cargo-build") {
 
 tasks.create(name: "delete-rust-java", type: Delete, dependsOn: "rust-deploy") {
     println "delete-rust-java"
-    def javaVersion = project.findProperty('javaVersion') ?: 'defaultValue'
     delete fileTree(dir: 'src/main/java/com/freelife/crypto/core', include: 'CryptoSession.java') // 원하는 경로와 파일 확장자로 변경
 }
 
-// -PjavaVersion=1.8
+// -PjavaVersion=8
 tasks.create(name: "native-java-change", type: Copy, dependsOn: "delete-rust-java") {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     println "native-java-change"
-    def javaVersion = project.findProperty('javaVersion') ?: 'defaultValue'
     //def envVar = System.getenv('JAVA_VERSION')
     def sourcePaths = []
-    if (javaVersion == '1.8') {
-        sourcePaths = ['copy/version_1_8', 'copy/common']
+    if (javaVersion == '8') {
+        sourcePaths = ['copy/version8', 'copy/common']
     } else {
         sourcePaths = ['copy/local', 'copy/common']
     }
@@ -160,10 +196,10 @@ tasks.withType(Jar) {
 sourceSets {
     main {
         java {
-            srcDirs = ['src/main/java']
+            setSrcDirs(['src/main/java'])
         }
         resources {
-            srcDirs = ['src/main/resources', 'rust-lib']
+            setSrcDirs(['src/main/resources', 'rust-lib'])
         }
     }
 }

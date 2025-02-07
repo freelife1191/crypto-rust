@@ -90,6 +90,29 @@ public final class CryptoSession implements AutoCloseable {
     /**
      * Map 형태로 전달된 구성을 사용하여 CryptoSession 객체를 생성합니다.
      * 구성 맵에는 다음 키가 포함되어야 합니다.
+     * @param configLocalMap configLocalMap(key, iv, seed, credential)
+     */
+    public CryptoSession(Map<String, String> configLocalMap, String key, String iv) {
+        if (configLocalMap == null)
+            throw new CryptoException("configLocalMap is required: Elements in configLocalMap must contain values for the keys (key, iv, seed, credential)");
+        List<String> errors = new ArrayList<>();
+        Stream.of("key", "iv", "seed", "credential")
+                .forEach(it -> {
+                    if (configLocalMap.get(it) == null || configLocalMap.get(it).isBlank()) errors.add(it);
+                });
+        if (!errors.isEmpty())
+            throw new CryptoException("The config local map does not contain the required keys: " + errors);
+        try {
+            mNativeObj = init(configLocalMap.get("key"), configLocalMap.get("iv"), configLocalMap.get("seed"), configLocalMap.get("credential"));
+            cleanable = cleaner.register(this, new State(mNativeObj));
+        } catch (Exception e) {
+            throw new CryptoException(e.getMessage());
+        }
+    }
+
+    /**
+     * Map 형태로 전달된 구성을 사용하여 CryptoSession 객체를 생성합니다.
+     * 구성 맵에는 다음 키가 포함되어야 합니다.
      * @param configMap configMap(aws_kms_key_arn, aws_access_key_id, aws_secret_access_key, seed, credential)
      */
     public CryptoSession(Map<String, String> configMap) {

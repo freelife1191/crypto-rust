@@ -90,8 +90,8 @@ RUST_BACKTRACE=full cargo build -vv
 # Java 파일이 정상적으로 Generate가 안되면 `java_glue.rs.in` 파일에 변화를 주고 다시 빌드하면 잘 생성됨
 ./gradlew build -x test publish && jar tf lib/build/libs/lib.jar
 
-# JDK 1.8 버전으로 빌드
-./gradlew build -x test publish -PjavaVersion=1.8
+# JDK 8 버전으로 빌드
+./gradlew build -x test publish -PjavaVersion=8
 ```
 
 Window 
@@ -140,3 +140,29 @@ https://m.blog.naver.com/duoh20/222043010528
 | `-C`     | DIR                 | 지정 파일 포함하여 지정된 디렉터리로 변경 |
 | `-v`     | verbose             | 상세한 정보 출력                          |
 | `-m`     | manifest FILE       | manifest 파일의 manifest 정보 포함        |
+
+### Major Version과 JDK 버전 대응표
+
+| **Major Version** | **JDK Version** |
+|------------------|---------------|
+| 45 | JDK 1.1 |
+| 46 | JDK 1.2 |
+| 47 | JDK 1.3 |
+| 48 | JDK 1.4 |
+| 49 | JDK 5 |
+| 50 | JDK 6 |
+| 51 | JDK 7 |
+| 52 | JDK 8 |
+| 53 | JDK 9 |
+| 54 | JDK 10 |
+| 55 | JDK 11 |
+| 56 | JDK 12 |
+| 57 | JDK 13 |
+| 58 | JDK 14 |
+| 59 | JDK 15 |
+| 60 | JDK 16 |
+| 61 | JDK 17 |
+| 62 | JDK 18 |
+| 63 | JDK 19 |
+| 64 | JDK 20 |
+| 65 | JDK 21 |
