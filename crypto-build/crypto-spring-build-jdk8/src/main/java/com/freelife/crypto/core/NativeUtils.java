@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freelife.crypto.jdk1_8;
+package com.freelife.crypto.core;
 
 import java.io.File;
 import java.io.FileNotFoundException;

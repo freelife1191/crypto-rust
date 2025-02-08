@@ -1,6 +1,6 @@
 spring:
   application:
-    name: crypto-spring-build
+    name: crypto-spring-build-jdk8
     version: 0.0.1.RC1
 logging:
   level:

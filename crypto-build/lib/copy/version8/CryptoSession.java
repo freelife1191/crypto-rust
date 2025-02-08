@@ -18,7 +18,7 @@ public final class CryptoSession {
     /*package*/ private volatile long mNativeObj;
 
     /**
-     * 기본 경로에 있는 config.json 파일을 읽어서 CryptoSession 인스턴스를 생성합니다.
+     * 기본 경로에 있는 config.json 파일을 읽어서 CryptoSession 객체를 생성합니다.
      * 기본 경로1: ${projectDir}/crypto/config.json
      * 기본 경로2: /var/opt/crypto/config.json
      */
@@ -26,7 +26,7 @@ public final class CryptoSession {
         List<Path> cryptoBasePaths = new ArrayList<>();
         cryptoBasePaths.add(Paths.get("crypto","config.json").toAbsolutePath());
         cryptoBasePaths.add(Paths.get("crypto","config.json"));
-        cryptoBasePaths.add(Paths.get(File.separator,"var", "opt", "crypto","config.json"));
+        cryptoBasePaths.add(Paths.get(File.separator, "opt", "crypto","config.json"));
         writeLog("Default Crypto Config Paths: " + cryptoBasePaths);
         Path cryptoApplyPath = null;
         for (Path path : cryptoBasePaths) {
@@ -45,7 +45,7 @@ public final class CryptoSession {
         }
     }
     /**
-     * path 경로에 있는 config.json 파일을 읽어서 CryptoSession 인스턴스를 생성합니다.
+     * path 경로에 있는 config.json 파일을 읽어서 CryptoSession 객체를 생성합니다.
      * @param path config.json 파일의 경로
      */
     public CryptoSession(String path) {
@@ -60,7 +60,7 @@ public final class CryptoSession {
         }
     }
     /**
-     * config.json 파일을 InputStream 형태로 읽어서 CryptoSession 인스턴스를 생성합니다.
+     * config.json 파일을 InputStream 형태로 읽어서 CryptoSession 객체를 생성합니다.
      * @param inputStream config.json 파일을 읽어들인 InputStream
      */
     public CryptoSession(InputStream inputStream) {
@@ -90,7 +90,7 @@ public final class CryptoSession {
     }
 
     /**
-     * config.json 파일을 읽어서 CryptoSession 인스턴스를 생성합니다.
+     * config.json 파일을 읽어서 CryptoSession 객체를 생성합니다.
      * @param bytes config.json 파일을 읽어들인 byte 배열
      */
     public CryptoSession(byte [] bytes) {
@@ -107,13 +107,15 @@ public final class CryptoSession {
      * Map 형태로 전달된 구성을 사용하여 CryptoSession 객체를 생성합니다.
      * 구성 맵에는 다음 키가 포함되어야 합니다.
      * @param configLocalMap configLocalMap(key, iv, seed, credential)
+     * @param key key
+     * @param iv iv
      */
     public CryptoSession(Map<String, String> configLocalMap, String key, String iv) {
         if (configLocalMap == null)
             throw new CryptoException("configLocalMap is required: Elements in configLocalMap must contain values for the keys (key, iv, seed, credential)");
         List<String> errors = new ArrayList<>();
-        String key = configLocalMap.get("key");
-        String iv = configLocalMap.get("iv");
+        String _key = configLocalMap.get("key");
+        String _iv = configLocalMap.get("iv");
         String seed = configLocalMap.get("seed");
         String credential = configLocalMap.get("credential");
         configLocalMap.forEach((k, v) -> {
@@ -121,19 +123,19 @@ public final class CryptoSession {
                 errors.add(k);
             }
         });
-        boolean allMatch = Stream.of(key, iv, seed, credential)
+        boolean allMatch = Stream.of(_key, _iv, seed, credential)
                 .allMatch(s -> s != null && !s.isEmpty());
         if (!allMatch)
             throw new CryptoException("The config map does not contain the required keys: " + errors);
         try {
-            mNativeObj = init(key, iv, seed, credential);
+            mNativeObj = init(_key, _iv, seed, credential);
         } catch (Exception e) {
             throw new CryptoException(e.getMessage());
         }
     }
 
     /**
-     * Map 형태로 전달된 구성을 사용하여 CryptoSession 인스턴스를 생성합니다.
+     * Map 형태로 전달된 구성을 사용하여 CryptoSession 객체를 생성합니다.
      * 구성 맵에는 다음 키가 포함되어야 합니다.
      * @param configMap configMap(aws_kms_key_arn, aws_access_key_id, aws_secret_access_key, seed, credential)
      */
@@ -161,8 +163,32 @@ public final class CryptoSession {
             throw new CryptoException(e.getMessage());
         }
     }
+
     /**
-     * 파라메터를 전달하여 CryptoSession 인스턴스를 생성합니다.
+     * 파라메터를 전달하여 CryptoSession 객체를 생성합니다.
+     * 파라메터는 다음 값들이 필수적으로 추가되어야 합니다.
+     * @param key key
+     * @param iv iv
+     * @param seed seed
+     * @param credential credential
+     */
+    public CryptoSession(String key, String iv, String seed, String credential) {
+        List<String> errors = new ArrayList<>();
+        if (key == null || key.isEmpty()) errors.add("key");
+        if (iv == null || iv.isEmpty()) errors.add("iv");
+        if (seed == null || seed.isEmpty()) errors.add("seed");
+        if (credential == null || credential.isEmpty()) errors.add("credential");
+        if (!errors.isEmpty())
+            throw new CryptoException("The following parameters are required: " + errors);
+        try {
+            mNativeObj = init(key, iv, seed, credential);
+        } catch (Exception e) {
+            throw new CryptoException(e.getMessage());
+        }
+    }
+
+    /**
+     * 파라메터를 전달하여 CryptoSession 객체를 생성합니다.
      * 파라메터는 다음 값들이 필수적으로 추가되어야 합니다.
      * @param aws_kms_key_arn aws_kms_key_arn
      * @param aws_access_key_id aws_access_key_id
@@ -219,7 +245,7 @@ public final class CryptoSession {
     }
 
     private static native long init(String path) throws Exception;
-    private static native long init(byte [] bytes) throws Exception;
+    private static native long init(byte[] bytes) throws Exception;
     private static native long init(String key, String iv, String seed, String credential) throws Exception;
     private static native long init(String aws_kms_key, String access_key_id, String secret_access_key, String seed, String credential) throws Exception;
     private static native String do_encrypt(long self, String plaintext) throws Exception;

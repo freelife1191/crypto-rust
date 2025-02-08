@@ -1,0 +1,19 @@
+/*
+pluginManagement {
+    repositories {
+        mavenCentral()
+        maven {
+            url 'https://crypto-dev-repo-123456789012.d.codeartifact.ap-northeast-1.amazonaws.com/maven/crypto-dev-repo/'
+            credentials {
+                username "aws"
+                // password System.env.CODEARTIFACT_AUTH_TOKEN
+                password "$codeartifactToken"
+                // echo "codeartifactToken=$CODEARTIFACT_AUTH_TOKEN" > ~/.gradle/gradle.properties
+            }
+        }
+    }
+}
+*/
+
+
+rootProject.name = 'crypto-spring-build-jdk8'

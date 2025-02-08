@@ -253,7 +253,7 @@ publishing {
               def baseArtifactId = 'crypto-core'
               def suffix = project.hasProperty('javaVersion') ? "-jdk${project.javaVersion}" : ''
               artifactId = baseArtifactId + suffix
-              version = '0.0.2.RC1'
+              version = '0.0.1.RC1'
               from components.java
 
               pom {

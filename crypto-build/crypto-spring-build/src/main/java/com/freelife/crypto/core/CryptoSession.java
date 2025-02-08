@@ -91,6 +91,8 @@ public final class CryptoSession implements AutoCloseable {
      * Map 형태로 전달된 구성을 사용하여 CryptoSession 객체를 생성합니다.
      * 구성 맵에는 다음 키가 포함되어야 합니다.
      * @param configLocalMap configLocalMap(key, iv, seed, credential)
+     * @param key key
+     * @param iv iv
      */
     public CryptoSession(Map<String, String> configLocalMap, String key, String iv) {
         if (configLocalMap == null)

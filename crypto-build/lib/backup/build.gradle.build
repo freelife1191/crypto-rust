@@ -149,7 +149,7 @@ tasks.create(name: "native-java-change", type: Copy, dependsOn: "delete-rust-jav
     if (javaVersion == '8') {
         sourcePaths = ['copy/version8', 'copy/common']
     } else {
-        sourcePaths = ['copy/local', 'copy/common']
+        sourcePaths = ['copy/other', 'copy/common']
     }
     // 여러 경로의 파일을 복사
     sourcePaths.each { sourcePath ->
@@ -216,7 +216,7 @@ publishing {
               def baseArtifactId = 'crypto-core'
               def suffix = project.hasProperty('javaVersion') ? "-jdk${project.javaVersion}" : ''
               artifactId = baseArtifactId + suffix
-              version = '0.0.2.RC1'
+              version = '0.0.1.RC1'
               from components.java
 
               pom {

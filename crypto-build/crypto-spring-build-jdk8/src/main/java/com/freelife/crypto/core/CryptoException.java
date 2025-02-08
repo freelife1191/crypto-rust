@@ -1,4 +1,4 @@
-package com.freelife.crypto.jdk1_8;
+package com.freelife.crypto.core;
 
 public class CryptoException extends RuntimeException {
 

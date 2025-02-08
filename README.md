@@ -18,6 +18,8 @@ Cross Compile 을 위해 `cross` 를 사용해 컴파일하며 `podman` 을 사�
 
 ## 성능 테스트 결과
 
+---
+
 아래의 성능 테스트 결과를 보면 암호화/복호화를 수행할 때 성능 저하가 거의 없음을 확인할 수 있습니다
 
 - 성능 테스트 조건
@@ -37,6 +39,8 @@ Cross Compile 을 위해 `cross` 를 사용해 컴파일하며 `podman` 을 사�
 
 ## Specification
 
+---
+
 - [Rust 1.83.0](https://www.rust-lang.org/)
 - [Gradle 8.12.1](https://gradle.org/)
 - Java 9+
@@ -44,14 +48,14 @@ Cross Compile 을 위해 `cross` 를 사용해 컴파일하며 `podman` 을 사�
 - [flapigen 0.8.0](https://github.com/Dushistov/flapigen-rs)
 - [cross 0.2.5](https://github.com/cross-rs/cross)
 
-## 프로젝트에서 사용되는 암호화 알고리즘
+### 프로젝트에서 사용되는 암호화 알고리즘
 
 - AES256-GCM
 - AES256-CBC
 - SHA256
 - MD5
 
-## 지원되는 MultiPlatform
+### 지원되는 MultiPlatform
 
 - **Windows**
     - x86_64(AMD64)
@@ -63,9 +67,62 @@ Cross Compile 을 위해 `cross` 를 사용해 컴파일하며 `podman` 을 사�
 
 ## Rust 프로젝트 구성
 
+---
+
 - `crypto-build`
     - Cross Compile MultiPlatform JNI Build Module
 - `crypto-lib`
     - Rust Library Core
 - `flapigen`
     - Rust FFI Generator
+
+## Gradle Build Command
+
+---
+
+### 기본 빌드
+
+crypto-build 프로젝트 경로로 이동
+
+```shell
+$ cd crypto-build
+```
+
+기본 빌드 및 jar 파일 생성
+- output 경로 `crypto-build/output/crypto-core-0.0.1.RC1.jar`
+
+```shell
+$ ./gradlew :lib:clean :lib:build
+```
+
+### 지원되는 파라메터
+
+- `javaVersion`: java 버전이 8인지 아닌지를 구분하기 위한 파라메터
+  - 8을 입력하면 JDK8 이상에서 사용가능한 라이브러리가 생성된다
+    - output: `crypto-core-jdk8-0.0.1.RC1.jar`
+  - 입력하지 않으면 기본값 11 적용되고 JDK11 이상에서 사용가능한 라이브러리가 생성된다
+    - output: `crypto-core-0.0.1.RC1.jar`
+- `version`: crypto 라이브러리 버전
+  - 입력값대로 버전을 지정한다
+  - 입력하지 않으면 기본값 `0.0.1.RC1` 버전이 적용된다
+
+
+Gradle Build Command 파라메터 입력 예:
+
+```shell
+# javaVersion 은 JDK8 라이브러리 버전은 0.0.1.RC1로 지정
+$ ./gradlew :lib:clean :lib:build -PjavaVersion=8 -Pversion=0.0.1.RC1
+
+# javaVersion 은 JDK8 라이브러리 버전은 기본값인 0.0.1.RC1로 지정
+$ ./gradlew :lib:clean :lib:build -PjavaVersion=8
+
+# javaVersion 은 기본값인 JDK11 라이브러리 버전은 0.0.1.RC1로 지정
+$ ./gradlew :lib:clean :lib:build -Pversion=0.0.1.RC1
+
+# javaVersion 은 기본값인 JDK11 라이브러리 버전은 기본값인 0.0.1.RC1로 지정
+$ ./gradlew :lib:clean :lib:build
+```
+
+output 경로:
+
+![output](docs/assets/img1.png)

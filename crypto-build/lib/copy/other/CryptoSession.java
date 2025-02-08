@@ -17,7 +17,7 @@ public final class CryptoSession implements AutoCloseable {
     private volatile long mNativeObj;
 
     /**
-     * 기본 경로에 있는 config.json 파일을 읽어서 CryptoSession 인스턴스를 생성합니다.
+     * 기본 경로에 있는 config.json 파일을 읽어서 CryptoSession 객체를 생성합니다.
      * 기본 경로1: ${projectDir}/crypto/config.json
      * 기본 경로2: /var/opt/crypto/config.json
      */
@@ -25,7 +25,7 @@ public final class CryptoSession implements AutoCloseable {
         List<Path> cryptoBasePaths = Arrays.asList(
                 Path.of("crypto", "config.json").toAbsolutePath(),
                 Path.of("crypto", "config.json"),
-                Path.of(File.separator, "var", "opt", "crypto", "config.json")
+                Path.of(File.separator, "opt", "crypto", "config.json")
         );
         writeLog("Default Crypto Config Paths: " + cryptoBasePaths);
         Path cryptoApplyPath = cryptoBasePaths.stream()
@@ -91,6 +91,8 @@ public final class CryptoSession implements AutoCloseable {
      * Map 형태로 전달된 구성을 사용하여 CryptoSession 객체를 생성합니다.
      * 구성 맵에는 다음 키가 포함되어야 합니다.
      * @param configLocalMap configLocalMap(key, iv, seed, credential)
+     * @param key key
+     * @param iv iv
      */
     public CryptoSession(Map<String, String> configLocalMap, String key, String iv) {
         if (configLocalMap == null)
@@ -128,6 +130,30 @@ public final class CryptoSession implements AutoCloseable {
         try {
             mNativeObj = init(configMap.get("aws_kms_key_arn"), configMap.get("aws_access_key_id"),
                     configMap.get("aws_secret_access_key"), configMap.get("seed"), configMap.get("credential"));
+            cleanable = cleaner.register(this, new State(mNativeObj));
+        } catch (Exception e) {
+            throw new CryptoException(e.getMessage());
+        }
+    }
+
+    /**
+     * 파라메터를 전달하여 CryptoSession 객체를 생성합니다.
+     * 파라메터는 다음 값들이 필수적으로 추가되어야 합니다.
+     * @param key key
+     * @param iv iv
+     * @param seed seed
+     * @param credential credential
+     */
+    public CryptoSession(String key, String iv, String seed, String credential) {
+        List<String> errors = new ArrayList<>();
+        if (key == null || key.isBlank()) errors.add("key");
+        if (iv == null || iv.isBlank()) errors.add("iv");
+        if (seed == null || seed.isBlank()) errors.add("seed");
+        if (credential == null || credential.isBlank()) errors.add("credential");
+        if (!errors.isEmpty())
+            throw new CryptoException("The following parameters are required: " + errors);
+        try {
+            mNativeObj = init(key, iv, seed, credential);
             cleanable = cleaner.register(this, new State(mNativeObj));
         } catch (Exception e) {
             throw new CryptoException(e.getMessage());
