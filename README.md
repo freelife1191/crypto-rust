@@ -1,5 +1,18 @@
 # crypto-rust
 
+<!-- TOC -->
+* [crypto-rust](#crypto-rust)
+  * [🚦 성능 테스트 결과](#-성능-테스트-결과)
+  * [🚦 Crypto 암호화 솔루션 핵심 알고리즘 구조](#-crypto-암호화-솔루션-핵심-알고리즘-구조)
+  * [🚦 Specification](#-specification)
+    * [► 프로젝트에서 사용되는 암호화 알고리즘](#-프로젝트에서-사용되는-암호화-알고리즘)
+    * [► 지원되는 MultiPlatform](#-지원되는-multiplatform)
+    * [► Rust 프로젝트 구성](#-rust-프로젝트-구성)
+  * [🚦 Gradle Build Command](#-gradle-build-command)
+    * [► 기본 빌드](#-기본-빌드)
+    * [► 지원되는 파라메터](#-지원되는-파라메터)
+<!-- TOC -->
+
 DB 암호화 솔루션 외부 공개용 프로젝트 입니다  
 외부 공개용 프로젝트에서는 AWS KMS 를 사용하지 않고 LOCAL 에서만 암호화/복호화를 수행합니다
 
@@ -16,7 +29,7 @@ Cross Compile 을 위해 `cross` 를 사용해 컴파일하며 `podman` 을 사�
 
 아래의 성능 테스트 결과를 참고하시기 바랍니다
 
-## 성능 테스트 결과
+## 🚦 성능 테스트 결과
 
 ---
 
@@ -37,7 +50,14 @@ Cross Compile 을 위해 `cross` 를 사용해 컴파일하며 `podman` 을 사�
 | 최소 17ms, 평균 27ms | 최소 44ms, 평균 79ms |
 
 
-## Specification
+## 🚦 Crypto 암호화 솔루션 핵심 알고리즘 구조
+
+---
+
+- [Encryption Algorithm](docs/EncryptionAlgorithm.md)
+
+
+## 🚦 Specification
 
 ---
 
@@ -48,14 +68,14 @@ Cross Compile 을 위해 `cross` 를 사용해 컴파일하며 `podman` 을 사�
 - [flapigen 0.8.0](https://github.com/Dushistov/flapigen-rs)
 - [cross 0.2.5](https://github.com/cross-rs/cross)
 
-### 프로젝트에서 사용되는 암호화 알고리즘
+### ► 프로젝트에서 사용되는 암호화 알고리즘
 
 - AES256-GCM
 - AES256-CBC
 - SHA256
 - MD5
 
-### 지원되는 MultiPlatform
+### ► 지원되는 MultiPlatform
 
 - **Windows**
     - x86_64(AMD64)
@@ -65,9 +85,7 @@ Cross Compile 을 위해 `cross` 를 사용해 컴파일하며 `podman` 을 사�
 - **MacOS**
     - Apple Silicon(ARM64)
 
-## Rust 프로젝트 구성
-
----
+### ► Rust 프로젝트 구성
 
 - `crypto-build`
     - Cross Compile MultiPlatform JNI Build Module
@@ -76,11 +94,11 @@ Cross Compile 을 위해 `cross` 를 사용해 컴파일하며 `podman` 을 사�
 - `flapigen`
     - Rust FFI Generator
 
-## Gradle Build Command
+## 🚦 Gradle Build Command
 
 ---
 
-### 기본 빌드
+### ► 기본 빌드
 
 crypto-build 프로젝트 경로로 이동
 
@@ -95,7 +113,7 @@ $ cd crypto-build
 $ ./gradlew :lib:clean :lib:build
 ```
 
-### 지원되는 파라메터
+### ► 지원되는 파라메터
 
 - `javaVersion`: java 버전이 8인지 아닌지를 구분하기 위한 파라메터
   - 8을 입력하면 JDK8 이상에서 사용가능한 라이브러리가 생성된다

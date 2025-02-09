@@ -1,4 +1,18 @@
+def name = "crypto-core"
+def defaultVersion = '0.0.1.RC1'
+
+// -Pversion=0.0.1.RC1
+// 명령줄 버전 값 확인 (findProperty 사용)
+def inputVersion = project.findProperty('version')
+// 입력된 버전 값이 있으면 사용, 없으면 기본값 사용
+if (inputVersion != null && inputVersion != 'unspecified') {
+    project.version = inputVersion
+} else {
+    project.version = defaultVersion
+}
+// -PjavaVersion=8
 def javaVersion = project.findProperty("javaVersion") ?: ""
+println("Project Version: ${project.version}, Java Version: ${javaVersion}")
 // archivesBaseName = "enigma" + suffix
 // println("📦 Building JAR: ${archivesBaseName}.jar")
 
@@ -97,6 +111,29 @@ tasks.named('compileJava') {
 
 tasks.withType(Jar) {
     dependsOn tasks.named('native-java-change')
+    doLast {
+        def jarFile = file("${buildDir}/libs/lib-${project.version}.jar")
+        def outputDir = file("${rootProject.projectDir}/output")
+        def libraryFilename = ""
+        if (javaVersion == '8') {
+            libraryFilename = "${outputDir}/${name}-jdk8-${project.version}.jar"
+        } else {
+            libraryFilename = "${outputDir}/${name}-${project.version}.jar"
+        }
+        def outputFile = file(libraryFilename)
+
+        if (!outputDir.exists()) {
+            outputDir.mkdirs()
+        }
+
+        copy {
+            from jarFile
+            into outputDir
+            rename { String fileName -> libraryFilename }
+        }
+
+        println("Copied ${jarFile} to ${outputFile}")
+    }
 }
 
 sourceSets {

@@ -12,9 +12,11 @@
 - https://crates.io/crates/rust_swig/0.3.0
 
 
-## 필수 설치 프로그램
+## 🚦 필수 설치 프로그램
 
-### Cross Compile
+---
+
+### ► 1. Cross Compile
   - https://podman.io
     - podman desktop 설치 후 Machine 생성이 필요
   - https://github.com/cross-rs/cross
@@ -24,7 +26,7 @@
       - https://github.com/cross-rs/cross/wiki
       - https://github.com/cross-rs/wiki_assets
 
-### Code Artifact
+### ► 2. Code Artifact
 
 ```shell
 $ brew install awscli
@@ -65,11 +67,12 @@ Rust Rover 빌드시 `libclang.dylib`를 계속 찾음
 sudo mkdir -p /usr/local/lib 
 sudo cp $(xcode-select --print-path)/usr/lib/libclang.dylib /usr/local/lib/libclang.dylib
 ```
-## Command
+
+## 🚦 Command
 
 ---
 
-### Build Command
+### ► 1. Build Command
 
 Cargo Build
 
@@ -78,7 +81,7 @@ Cargo Build
 RUST_BACKTRACE=full cargo build -vv
 ```
 
-### Gradle Command
+### ► 2. Gradle Command
 
 ```shell
 # Gradle Test (잘 빌드가 되는지 테스트)
@@ -112,7 +115,7 @@ gradlew.bat build -x test && jar tf lib/build/libs/lib.jar
 ```
 
 
-### SpringBoot 테스트
+### ► 3. SpringBoot 테스트
 
 - `crypto-spring-test` 스프링부트 테스트 프로젝트가 추가되어 있음
 - 해당 프로젝트의 `libs` 경로에 변경된 `lib.jar` 파일을 적용하면서 테스트
@@ -120,12 +123,12 @@ gradlew.bat build -x test && jar tf lib/build/libs/lib.jar
 - 적용이 잘안되면 Gradle dependencies 설정을 잠깐 변경해서 빌드후 다시 변경해서 빌드하면 적용됨
 
 
-### Gradle Command 참고
+### ► 4. Gradle Command 참고
 
 - https://docs.gradle.org/current/userguide/command_line_interface.html
 - https://docs.gradle.org/current/userguide/command_line_interface_basics.html
 
-### Jar Command
+### ► 5. Jar Command
 
 https://m.blog.naver.com/duoh20/222043010528
 
@@ -141,7 +144,7 @@ https://m.blog.naver.com/duoh20/222043010528
 | `-v`     | verbose             | 상세한 정보 출력                          |
 | `-m`     | manifest FILE       | manifest 파일의 manifest 정보 포함        |
 
-### Major Version과 JDK 버전 대응표
+### ► 6. Major Version과 JDK 버전 대응표
 
 | **Major Version** | **JDK Version** |
 |------------------|---------------|

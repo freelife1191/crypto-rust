@@ -75,7 +75,81 @@ tasks.create(name: "cargo-output-dir", description: "Get cargo metadata") {
     }
 }
 
-tasks.create(name: "delete-rust-java", type: Delete, dependsOn: "cargo-output-dir") {
+// Build with cargo
+tasks.create(name: "cargo-build", type: Exec, description: "Running Cargo build", dependsOn: "cargo-output-dir") {
+    workingDir rustBasePath
+    environment 'CARGO_TARGET_DIR', 'target'
+    commandLine 'cargo', 'build', '--release'
+
+    println "Executing command: cross build --target x86_64-pc-windows-gnu --release"
+    exec {
+        workingDir rustBasePath
+        environment 'CROSS_CONTAINER_ENGINE', 'podman'
+        environment 'CROSS_CONTAINER_ENGINE_NO_BUILDKIT', '1'
+        environment 'CROSS_CONFIG', "${rustBasePath}/Cross.toml"
+        environment 'CARGO_TARGET_DIR', 'target'
+        environment 'CARGO_BUILD_TARGET', 'x86_64-pc-windows-gnu'
+        commandLine 'cross', 'build', '--release'
+    }
+    println "Executing command: cross build --target x86_64-unknown-linux-gnu --release"
+    exec {
+        workingDir rustBasePath
+        environment 'CROSS_CONTAINER_ENGINE', 'podman'
+        environment 'CROSS_CONTAINER_ENGINE_NO_BUILDKIT', '1'
+        environment 'CROSS_CONFIG', "${rustBasePath}/Cross.toml"
+        environment 'CARGO_TARGET_DIR', 'target'
+        environment 'CARGO_BUILD_TARGET', 'x86_64-unknown-linux-gnu'
+        commandLine 'cross', 'build', '--release'
+        //commandLine 'sh' , '-c', 'rustup update && cross build --release'
+    }
+    println "Executing command: cross build --target aarch64-unknown-linux-gnu --release"
+    exec {
+        workingDir rustBasePath
+        environment 'CROSS_CONTAINER_ENGINE', 'podman'
+        environment 'CROSS_CONTAINER_ENGINE_NO_BUILDKIT', '1'
+        environment 'CROSS_CONFIG', "${rustBasePath}/Cross.toml"
+        environment 'CARGO_TARGET_DIR', 'target'
+        environment 'CARGO_BUILD_TARGET', 'aarch64-unknown-linux-gnu'
+        commandLine 'cross', 'build', '--release'
+    }
+}
+
+
+tasks.create(name: "rust-deploy", type: Sync, dependsOn: "cargo-build") {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    def lib_home = "rust-lib"
+    // Define a common rename function
+    def commonRename = { String fileName ->
+        def nameWithoutExtension = fileName.lastIndexOf('.').with { it != -1 ? fileName[0..<it] : fileName }
+        def extension = fileName.lastIndexOf('.').with { it != -1 ? fileName[it..-1] : '' }
+        return "crypto${extension}"
+    }
+    destinationDir = file("$lib_home")
+
+    include "*.dylib","*.so","*.dll"
+    from("${project.ext.cargo_target_directory}/release") {
+        //rename { fileName -> "lib"+commonRename(fileName) }
+        //include "*.dylib","*.so","*.dll"
+        into "lib/macosx/aarch64"
+    }
+    from("${project.ext.cargo_target_directory}/x86_64-pc-windows-gnu/release") {
+        //rename commonRename
+        //include "*.dylib","*.so","*.dll"
+        into "lib/windows/amd64"
+    }
+    from("${project.ext.cargo_target_directory}/x86_64-unknown-linux-gnu/release") {
+        //rename { fileName -> "lib"+commonRename(fileName) }
+        //include "*.dylib","*.so","*.dll"
+        into "lib/linux/amd64"
+    }
+    from("${project.ext.cargo_target_directory}/aarch64-unknown-linux-gnu/release") {
+        //rename { fileName -> "lib"+commonRename(fileName) }
+        //include "*.dylib","*.so","*.dll"
+        into "lib/linux/aarch64"
+    }
+}
+
+tasks.create(name: "delete-rust-java", type: Delete, dependsOn: "rust-deploy") {
     println "delete-rust-java"
     delete fileTree(dir: 'src/main/java/com/freelife/crypto/core', include: 'CryptoSession.java') // 원하는 경로와 파일 확장자로 변경
 }
@@ -101,9 +175,29 @@ tasks.create(name: "native-java-change", type: Copy, dependsOn: "delete-rust-jav
 
 tasks.named('processResources') {
     dependsOn tasks.named('cargo-output-dir')
+    dependsOn tasks.named('cargo-build')
+    dependsOn tasks.named('rust-deploy')
     dependsOn tasks.named('delete-rust-java')
     dependsOn tasks.named('native-java-change')
 }
+
+
+// Hook up tasks to execute before building java
+tasks.withType(JavaCompile) {
+    compileTask -> compileTask.dependsOn "rust-deploy"
+}
+
+// Hook up clean tasks
+// tasks.create(name: "clean-rust", type: Delete, description: "Deleting built libs", dependsOn: "cargo-output-dir") {
+//     delete fileTree(dir: "${project.ext.cargo_target_directory}")
+// }
+// clean.dependsOn "clean-rust"
+
+
+// 삭제 참고
+// delete fileTree("${project.ext.cargo_target_directory}/release") {
+//    include "*.dylib","*.so","*.dll"
+// }
 
 tasks.named('compileJava') {
     dependsOn tasks.named('native-java-change')

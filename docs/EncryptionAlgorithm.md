@@ -31,6 +31,10 @@
 
 암호화 솔루션 Config 파일을 생성하는 과정
 
+**Crypto 구조**
+
+![Crypto Structure](assets/img0.png)
+
 ### 1. seed_byte Generation
 
 76 byte 의 랜덤 바이트 생성
