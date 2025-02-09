@@ -13,7 +13,7 @@ if (inputVersion != null && inputVersion != 'unspecified') {
 // -PjavaVersion=8
 def javaVersion = project.findProperty("javaVersion") ?: ""
 println("Project Version: ${project.version}, Java Version: ${javaVersion}")
-// archivesBaseName = "enigma" + suffix
+// archivesBaseName = "crypto" + suffix
 // println("📦 Building JAR: ${archivesBaseName}.jar")
 
 // JAVA 버전 확인
