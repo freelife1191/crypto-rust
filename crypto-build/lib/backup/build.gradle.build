@@ -1,4 +1,4 @@
-def name = "crypto-core"
+def libname = "crypto-core"
 def defaultVersion = '0.0.1.RC1'
 
 // -Pversion=0.0.1.RC1
@@ -210,9 +210,9 @@ tasks.withType(Jar) {
         def outputDir = file("${rootProject.projectDir}/output")
         def libraryFilename = ""
         if (javaVersion == '8') {
-            libraryFilename = "${outputDir}/${name}-jdk8-${project.version}.jar"
+            libraryFilename = "${outputDir}/${libname}-jdk8-${project.version}.jar"
         } else {
-            libraryFilename = "${outputDir}/${name}-${project.version}.jar"
+            libraryFilename = "${outputDir}/${libname}-${project.version}.jar"
         }
         def outputFile = file(libraryFilename)
 
@@ -250,10 +250,11 @@ publishing {
     publications {
           mavenJava(MavenPublication) {
               groupId = 'com.freelife.crypto'
+              version = libname
               def baseArtifactId = 'crypto-core'
               def suffix = project.hasProperty('javaVersion') ? "-jdk${project.javaVersion}" : ''
               artifactId = baseArtifactId + suffix
-              version = '0.0.1.RC1'
+              version = project.version
               from components.java
 
               pom {
@@ -283,11 +284,11 @@ publishing {
     }
     repositories {
         maven {
-            name 'maven'
-            url 's3://crypto-dev-repo'
+            name = libname
+            url = 's3://crypto-dev-repo'
             credentials(AwsCredentials) {
-                accessKey 'AXXXXXXXXXXXXXXXXXXX'
-                secretKey '53gXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+                accessKey = 'AXXXXXXXXXXXXXXXXXXX'
+                secretKey = '53gXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
             }
         }
     }

@@ -9,7 +9,7 @@
     * [► 지원되는 MultiPlatform](#-지원되는-multiplatform)
     * [► Rust 프로젝트 구성](#-rust-프로젝트-구성)
   * [🚦 Gradle Build Command](#-gradle-build-command)
-    * [► 기본 빌드](#-기본-빌드)
+    * [► `crypto-core` Library 빌드](#-crypto-core-library-빌드)
     * [► 지원되는 파라메터](#-지원되는-파라메터)
 <!-- TOC -->
 
@@ -98,7 +98,7 @@ Cross Compile 을 위해 `cross` 를 사용해 컴파일하며 `podman` 을 사�
 
 ---
 
-### ► 기본 빌드
+### ► `crypto-core` Library 빌드
 
 crypto-build 프로젝트 경로로 이동
 
@@ -122,7 +122,7 @@ $ ./gradlew :lib:clean :lib:build
     - output: `crypto-core-0.0.1.RC1.jar`
 - `version`: crypto 라이브러리 버전
   - 입력값대로 버전을 지정한다
-  - 입력하지 않으면 기본값 `0.0.1.RC1` 버전이 적용된다
+  - 입력하지 않으면 기본 버전이 적용된다
 
 
 Gradle Build Command 파라메터 입력 예:
@@ -131,13 +131,13 @@ Gradle Build Command 파라메터 입력 예:
 # javaVersion 은 JDK8 라이브러리 버전은 0.0.1.RC1로 지정
 $ ./gradlew :lib:clean :lib:build -PjavaVersion=8 -Pversion=0.0.1.RC1
 
-# javaVersion 은 JDK8 라이브러리 버전은 기본값인 0.0.1.RC1로 지정
+# javaVersion 은 JDK8 라이브러리 버전은 기본 버전 지정
 $ ./gradlew :lib:clean :lib:build -PjavaVersion=8
 
 # javaVersion 은 기본값인 JDK11 라이브러리 버전은 0.0.1.RC1로 지정
 $ ./gradlew :lib:clean :lib:build -Pversion=0.0.1.RC1
 
-# javaVersion 은 기본값인 JDK11 라이브러리 버전은 기본값인 0.0.1.RC1로 지정
+# javaVersion 은 기본값인 JDK11 라이브러리 버전은 기본 버전 지정
 $ ./gradlew :lib:clean :lib:build
 ```
 

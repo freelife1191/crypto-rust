@@ -1,4 +1,4 @@
-def name = "crypto-core"
+def libname = "crypto-core"
 def defaultVersion = '0.0.1.RC1'
 
 // -Pversion=0.0.1.RC1
@@ -210,9 +210,9 @@ tasks.withType(Jar) {
         def outputDir = file("${rootProject.projectDir}/output")
         def libraryFilename = ""
         if (javaVersion == '8') {
-            libraryFilename = "${outputDir}/${name}-jdk8-${project.version}.jar"
+            libraryFilename = "${outputDir}/${libname}-jdk8-${project.version}.jar"
         } else {
-            libraryFilename = "${outputDir}/${name}-${project.version}.jar"
+            libraryFilename = "${outputDir}/${libname}-${project.version}.jar"
         }
         def outputFile = file(libraryFilename)
 
