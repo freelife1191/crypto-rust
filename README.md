@@ -89,6 +89,10 @@ Cross Compile 을 위해 `cross` 를 사용해 컴파일하며 `podman` 을 사�
 
 - `crypto-build`
     - Cross Compile MultiPlatform JNI Build Module
+    - `crypto-spring-build`
+      - Spring Boot Build Test Module
+    - `crypto-spring-build-jdk1.8`
+      - Spring Boot JDK8 Build Test Module
 - `crypto-lib`
     - Rust Library Core
 - `flapigen`
