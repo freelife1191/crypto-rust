@@ -25,7 +25,8 @@ public final class CryptoSession implements AutoCloseable {
         List<Path> cryptoBasePaths = Arrays.asList(
                 Path.of("crypto", "config.json").toAbsolutePath(),
                 Path.of("crypto", "config.json"),
-                Path.of(File.separator, "opt", "crypto", "config.json")
+                Path.of(File.separator, "opt", "crypto", "config.json"),
+                Path.of(File.separator, "var", "crypto", "config.json")
         );
         writeLog("Default Crypto Config Paths: " + cryptoBasePaths);
         Path cryptoApplyPath = cryptoBasePaths.stream()
@@ -202,6 +203,25 @@ public final class CryptoSession implements AutoCloseable {
         }
     }
 
+    public final String encrypt_id(String plaintext, int id) {
+        if (id != 100 && id != 400)
+            throw new CryptoException("Invalid ID: " + id + ", Available IDs: 100, 400");
+        try {
+            return do_encrypt_id(mNativeObj, plaintext, id);
+        } catch (Exception e) {
+            throw new CryptoException(e.getMessage());
+        }
+    }
+    public final String decrypt_id(String encrypted, int id) {
+        if (id != 100 && id != 400)
+            throw new CryptoException("Invalid ID: " + id + ", Available IDs: 100, 400");
+        try {
+            return do_decrypt_id(mNativeObj, encrypted, id);
+        } catch (Exception e) {
+            throw new CryptoException(e.getMessage());
+        }
+    }
+
     @Override
     public synchronized void close() {
         cleanable.clean();
@@ -228,6 +248,8 @@ public final class CryptoSession implements AutoCloseable {
     private static native long init(String aws_kms_key, String access_key_id, String secret_access_key, String seed, String credential) throws Exception;
     private static native String do_encrypt(long self, String plaintext) throws Exception;
     private static native String do_decrypt(long self, String encrypted) throws Exception;
+    private static native String do_encrypt_id(long self, String plaintext, int id) throws Exception;
+    private static native String do_decrypt_id(long self, String encrypted, int id) throws Exception;
     private static native void do_delete(long me);
     /*package*/ CryptoSession(InternalPointerMarker marker, long ptr) {
         assert marker == InternalPointerMarker.RAW_PTR;

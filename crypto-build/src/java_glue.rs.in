@@ -17,6 +17,8 @@ foreign_class!(class CryptoSession {
     constructor CryptoSession::of_local(key: String, iv: String, seed: String, credential: String) -> Result<CryptoSession, String>;
     fn CryptoSession::encrypt(&self, plaintext: String) -> Result<String, String>;
     fn CryptoSession::decrypt(&self, encrypted: String) -> Result<String, String>;
+    fn CryptoSession::encrypt_id(&self, plaintext: String, id: i32) -> Result<String, String>;
+    fn CryptoSession::decrypt_id(&self, plaintext: String, id: i32) -> Result<String, String>;
     foreign_code r#"
         static {
             try {

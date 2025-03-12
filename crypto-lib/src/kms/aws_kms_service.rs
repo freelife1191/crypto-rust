@@ -32,7 +32,7 @@ impl AwsKmsService {
     pub fn read_config() -> Result<AwsConfig, CryptoError> {
         // let config_content = fs::read_to_string("../resources/config.json")
         //     .map_err(|e| CryptoError::ConfigPathError(e))?;
-        let config_content = include_str!("../resources/local/config.json");
+        let config_content = include_str!("../resources/default/config.json");
         // let config_content = fs::read_to_string(path)
         //     .map_err(|e| CryptoError::ConfigPathError(e))?;
 
@@ -44,10 +44,10 @@ impl AwsKmsService {
 
     pub fn new() -> AwsKmsServiceResult {
         let config = Self::read_config()?;
-        Ok(Self::init(config))
+        Ok(Self::init(config)?)
     }
 
-    pub fn get_kms_service(config: CryptoConfig) -> Self {
+    pub fn get_kms_service(config: CryptoConfig) -> Result<AwsKmsService, CryptoError> {
 
         let aws_config = AwsConfig {
             aws_kms_key_arn: config.aws_kms_key_arn.unwrap().to_string(),
@@ -60,7 +60,7 @@ impl AwsKmsService {
         Self::init(aws_config)
     }
 
-    fn init(config: AwsConfig) -> AwsKmsService {
+    fn init(config: AwsConfig) -> Result<AwsKmsService, CryptoError> {
         // todo: match 에러 체크
 
         let region_provider = RegionProviderChain::default_provider().or_else("ap-northeast-2");
@@ -69,7 +69,7 @@ impl AwsKmsService {
         // println!("AWS_ACCESS_KEY_ID: {}, AWS_SECRET_ACCESS_KEY: {}", &config.access_key_id, &config.secret_access_key);
         let credentials = Credentials::new(&config.aws_access_key_id, &config.aws_secret_access_key, None, None, "crypto");
         let runtime = tokio::runtime::Runtime::new()
-            .map_err(|e| CryptoError::AwsKmsInitError(e.to_string())).unwrap();
+            .map_err(|e| CryptoError::AwsKmsInitError(e.to_string()))?;
         let aws_config = runtime.block_on(async {
             aws_config::from_env()
                 .region(region_provider)
@@ -78,12 +78,12 @@ impl AwsKmsService {
                 .await
         });
 
-        AwsKmsService {
+        Ok(AwsKmsService {
             aws_kms_key_arn: config.aws_kms_key_arn,
             aws_access_key_id: config.aws_access_key_id,
             aws_secret_access_key: config.aws_secret_access_key,
             client: Client::new(&aws_config),
-        }
+        })
     }
 
     /*

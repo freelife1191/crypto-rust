@@ -6,7 +6,7 @@ mod aws_kms_service_test {
     use crate::domain::crypto_config::JsonConfig;
 
     fn get_seed() -> String {
-        let config_content = include_str!("../resources/local/config.json");
+        let config_content = include_str!("../resources/default/config.json");
         println!("{}", config_content);
         // let config_content = fs::read_to_string(path)?;
         let config: JsonConfig = serde_json::from_str(&config_content).unwrap();

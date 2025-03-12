@@ -1,30 +1,35 @@
-use crate::domain::crypto_cipher_spec::{CryptoCipherSpec, OutputFormat};
+use crate::domain::crypto_cipher_spec::CryptoCipherSpec;
 use crate::domain::crypto_config::{CryptoConfig, CryptoType, JsonConfig};
 use crate::error::crypto_error::CryptoError;
 use crate::kms::aws_kms_service::{AwsConfig, AwsKmsService};
 use crate::util::crypto_util;
-use crate::util::crypto_util::{decode_aes_256_gcm, encode_base64};
-use hex::encode;
+use crate::util::crypto_util::decode_aes_256_gcm;
 use std::path::Path;
 use std::string::String;
-use aws_sdk_kms::config::retry::ShouldAttempt::No;
 
 #[allow(unused)]
 #[derive(Debug, Clone, Default)]
 pub struct CryptoSession {
-    ag: String,
-    bm: String,
-    pm: String,
-    key: Vec<u8>,
-    iv: Vec<u8>,
-    of: OutputFormat
+    session_type: CryptoSessionType,
+    cipher_spec_vec: Vec<CryptoCipherSpec>,
+    cipher_spec_enc: CryptoCipherSpec,
+    cipher_spec_hash: CryptoCipherSpec
+}
+
+
+#[allow(non_camel_case_types)]
+#[derive(Clone, Debug, Default, PartialEq)]
+enum CryptoSessionType {
+    #[default]
+    ENC_HASH,
+    ONLY_ENC
 }
 
 #[allow(unused)]
 impl CryptoSession {
 
     fn read_config() -> Result<AwsConfig, Box<dyn std::error::Error>> {
-        let config_content = include_str!("../resources/local/config.json");
+        let config_content = include_str!("../resources/default/config.json");
         // let config_content = fs::read_to_string(path)?;
         let config = serde_json::from_str(&config_content)?;
         Ok(config)
@@ -32,24 +37,60 @@ impl CryptoSession {
 
     pub fn encrypt(&self, plaintext: String) -> Result<String, String> {
         // println!("Encrypt algorithm={}, block_mode={}, padding_mode={}", self.ag, self.bm, self.pm);
-        let encrypted = crypto_util::encrypt_algorithm(plaintext.as_bytes(), self.key.as_slice(), self.iv.as_slice())
+        let crypto_cipher_spec = self.cipher_spec_enc.clone();
+        // println!("enigma_cipher_spec: {:?}", enigma_cipher_spec.clone());
+        let _iv = match crypto_cipher_spec.iv.as_ref() {
+            Some(iv) => iv.as_slice(),
+            None => return Err("Initialization vector (IV) is missing".to_string()),
+        };
+        let encrypted = crypto_util::encrypt_algorithm(plaintext.as_bytes(), crypto_cipher_spec.ky.as_slice(), _iv)
             .map_err(|e| e.to_string())?;
-        let encrypt_encoded = self.of.encoder()(encrypted.as_slice());
+        let encrypt_encoded = crypto_cipher_spec.clone().of.encoder()(encrypted.as_slice());
         // println!("Encrypt Encoded: {:?}", encrypt_encoded);
         Ok(encrypt_encoded)
     }
 
+    pub fn encrypt_id(&self, plaintext: String, id: i32) -> Result<String, String> {
+        // println!("Encrypt id={}, plaintext={}", id, plaintext);
+        if id == 400 {
+            if self.session_type == CryptoSessionType::ONLY_ENC {
+                return Err(CryptoError::SessionError("Only Encrypt Config".to_string()).to_string());
+            }
+            let crypto_cipher_spec = self.cipher_spec_hash.clone();
+            let encrypted = crypto_util::hash(plaintext.as_bytes(), crypto_cipher_spec.ky.as_slice())
+                .map_err(|e| e.to_string())?;
+            return Ok(crypto_cipher_spec.clone().of.encoder()(encrypted.as_slice()));
+        }
+        Ok(self.encrypt(plaintext).map_err(|e| e.to_string())?)
+    }
+
     pub fn decrypt(&self, encrypted: String) -> Result<String, String> {
         // println!("Decrypt algorithm={}, block_mode={}, padding_mode={}", self.ag, self.bm, self.pm);
-        let decrypted =
-            crypto_util::decrypt_algorithm(
-                self.of.decoder()(&encrypted)
-                    .map_err(|e| e.to_string())?
-                    .as_slice(), self.key.as_slice(), self.iv.as_slice())
-                .map_err(|e| e.to_string())?;
+        let crypto_cipher_spec = self.cipher_spec_enc.clone();
+        // println!("enigma_cipher_spec: {:?}", enigma_cipher_spec.clone());
+        let _iv = match crypto_cipher_spec.iv.as_ref() {
+            Some(iv) => iv.as_slice(),
+            None => return Err("Initialization vector (IV) is missing".to_string()),
+        };
+        let data_binding = crypto_cipher_spec.of.decoder()(&encrypted)
+            .map_err(|e| e.to_string())?;
+        let decrypted = crypto_util::decrypt_algorithm(data_binding.as_slice(), crypto_cipher_spec.ky.as_slice(), _iv)
+            .map_err(|e| e.to_string())?;
         let data = String::from_utf8(decrypted)
             .map_err(|e| CryptoError::SessionError(e.to_string()).to_string())?;
         Ok(data)
+        // let decrypt_decoded = self.of.decoder()();
+        // println!("Encrypt Encoded: {:?}", encrypt_encoded);
+        // encrypt_encoded
+    }
+
+    pub fn decrypt_id(&self, encrypted: String, id: i32) -> Result<String, String> {
+        // println!("Decrypt algorithm={}, block_mode={}, padding_mode={}", self.ag, self.bm, self.pm);
+        if id == 400 {
+            return Ok(encrypted);
+        }
+        let decrypted = self.decrypt(encrypted).map_err(|e| e.to_string())?;
+        Ok(decrypted)
         // let decrypt_decoded = self.of.decoder()();
         // println!("Encrypt Encoded: {:?}", encrypt_encoded);
         // encrypt_encoded
@@ -114,21 +155,13 @@ impl CryptoSession {
             .map_err(|e| e.to_string())?;
 
         // println!("CryptoConfig: {:#?}", &crypto_config);
-        let cipher_spec = Self::get_cipher_spec(crypto_config.clone())
+        let crypto_session = Self::get_cipher_spec_vec(crypto_config.clone())
             .map_err(|e| e.to_string())?;
-        // println!("cipher_spec: {:#?}", &cipher_spec);
-        // println!("key: {:?}, iv: {:?}", &cipher_spec.ky.len(), &cipher_spec.iv.len());
-        Ok(Self::builder()
-            .algorithm(cipher_spec.ag)
-            .block_mode(cipher_spec.bm)
-            .padding_mode(cipher_spec.pm)
-            .key(cipher_spec.ky)
-            .iv(cipher_spec.iv)
-            .of(cipher_spec.of)
-            .build())
+        // println!("enigma_session: {:#?}", &enigma_session);
+        Ok(crypto_session)
     }
 
-    pub fn get_cipher_spec(config: CryptoConfig) -> Result<CryptoCipherSpec, String> {
+    pub fn get_cipher_spec_vec(config: CryptoConfig) -> Result<CryptoSession, String> {
         let key_iteration = if let Some(key_iteration) = config.key_iteration {
             key_iteration
         } else { 10 };
@@ -146,20 +179,42 @@ impl CryptoSession {
         // println!("seed_vec: {:?}", seed_vec);
         // println!("cred_key_vec: {:?}", cred_key_vec);
         // println!("cred_iv_vec: {:?}", cred_iv_vec);
-        let credential_vec = crypto_util::decrypt_algorithm(config.credential.unwrap().as_slice(), &cred_key_vec, &cred_iv_vec)
-            .map_err(|e| e.to_string())?;
+        let credential_vec = match config.credential {
+            Some(ref credential) => crypto_util::decrypt_algorithm(credential.as_slice(), &cred_key_vec, &cred_iv_vec)
+                .map_err(|e| e.to_string())?,
+            None => return Err("Credential is missing".to_string()),
+        };
         // println!("credential_vec: {:?}", String::from_utf8(credential_vec.clone()).unwrap());
-        let result = serde_json::from_slice(credential_vec.as_slice())
-            .map_err(|e| e.to_string())?;
+        let result: Result<Vec<CryptoCipherSpec>, _> = serde_json::from_slice(credential_vec.as_slice());
         // println!("result: {:?}", result);
-        Ok(result)
+        let crypto_session = match result {
+            Ok(vec) => CryptoSession {
+                session_type: CryptoSessionType::ENC_HASH,
+                cipher_spec_vec: vec.clone(),
+                cipher_spec_enc: vec.iter().filter(|it| it.id == 100).next().ok_or_else(|| CryptoError::SessionError("Encryption(100) spec not found".to_string()).to_string())?.clone(),
+                cipher_spec_hash: vec.iter().filter(|it| it.id == 400).next().ok_or_else(|| CryptoError::SessionError("Hash(400) spec not found".to_string()).to_string())?.clone(),
+            },
+            Err(_) => {
+                let enc: CryptoCipherSpec = serde_json::from_slice(credential_vec.as_slice())
+                    .map_err(|e| e.to_string())?;
+                CryptoSession {
+                    session_type: CryptoSessionType::ONLY_ENC,
+                    cipher_spec_vec: Vec::new(),
+                    cipher_spec_enc: enc,
+                    cipher_spec_hash: CryptoCipherSpec::default(), // 빈 벡터로 초기화
+                }
+            }
+        };
+        Ok(crypto_session)
     }
 
     fn get_seed_vec(config: CryptoConfig) -> Result<Vec<u8>, String> {
         if config.clone().crypto_type == Some(CryptoType::AWS.to_string()) {
-            let kms_service = AwsKmsService::get_kms_service(config.clone());
-            let seed_vec = kms_service.decrypt(config.clone().seed.unwrap().as_slice())
-                .map_err(|e| e.to_string())?;
+            let kms_service = AwsKmsService::get_kms_service(config.clone()).map_err(|e| e.to_string())?;
+            let seed_vec = match config.seed {
+                Some(seed) => kms_service.decrypt(seed.as_slice()).map_err(|e| e.to_string())?,
+                None => return Err("Seed is missing".to_string()),
+            };
             Ok(seed_vec)
         } else {
             let key_str = config.key.map_or_else(|| "".to_string(), |v| v);
@@ -179,65 +234,6 @@ impl CryptoSession {
             // println!("복호화된 데이터: {}", encode(token.clone()));
             // println!("원본 데이터: {}", "7e948d72e1f08f14be079839c07260261c9837992abe2c12493f4073e4484ef6ee9e0e976409c8ffb9b8da1a89c0cb5a936e69d7d85f14d4fdc5fcf106edcb8aee4451aaab24eedf7a6f1878".to_string());
             Ok(token)
-        }
-    }
-
-    fn builder() -> CryptoSessionBuilder {
-        CryptoSessionBuilder::default()
-    }
-}
-
-#[allow(unused)]
-#[derive(Default)]
-struct CryptoSessionBuilder {
-    algorithm: String,
-    block_mode: String,
-    padding_mode: String,
-    key: Vec<u8>,
-    iv: Vec<u8>,
-    output_format: OutputFormat,
-}
-
-#[allow(unused)]
-impl CryptoSessionBuilder {
-    fn algorithm(mut self, algorithm: String) -> Self {
-        self.algorithm = algorithm;
-        self
-    }
-
-    fn block_mode(mut self, block_mode: String) -> Self {
-        self.block_mode = block_mode;
-        self
-    }
-
-    fn padding_mode(mut self, padding_mode: String) -> Self {
-        self.padding_mode = padding_mode;
-        self
-    }
-
-    fn key(mut self, key: Vec<u8>) -> Self {
-        self.key = key;
-        self
-    }
-
-    fn iv(mut self, iv: Vec<u8>) -> Self {
-        self.iv = iv;
-        self
-    }
-
-    fn of(mut self, output_format: OutputFormat) -> Self {
-        self.output_format = output_format;
-        self
-    }
-
-    fn build(self) -> CryptoSession {
-        CryptoSession {
-            ag: self.algorithm,
-            bm: self.block_mode,
-            pm: self.padding_mode,
-            key: self.key,
-            iv: self.iv,
-            of: self.output_format,
         }
     }
 }

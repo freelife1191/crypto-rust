@@ -15,13 +15,14 @@ mod crypto_config_generator {
     use std::path::{self, Path};
 // Aead trait 및 랜덤 생성기
 
+    #[allow(unused)]
     fn read_file_as_bytes<P: AsRef<Path>>(path: P) -> std::io::Result<Vec<u8>> {
         fs::read(path)
     }
 
     fn generate_token(config: CryptoConfig, seed_byte: &[u8], key: &str, iv: &str) -> Result<Vec<u8>, String> {
         if config.crypto_type == Some(CryptoType::AWS.to_string()) {
-            let kms_service = AwsKmsService::get_kms_service(config.clone());
+            let kms_service = AwsKmsService::get_kms_service(config.clone()).map_err(|e| format!("{:?}", e)).unwrap();
             let cipher_vec = kms_service.encrypt(&seed_byte)
                 .map_err(|e| format!("{:?}", e))?; // seed_base64
             //let seed_hex = "0102020078eaeb9a15eee4a08a9ca09c1f94ff682c9ffb8ff4b3a80a7bbee8bdb8c4b373d701229b983282ac6a42f5760fdb95b90dbf0000006e306c06092a864886f70d010706a05f305d020100305806092a864886f70d010701301e060960864801650304012e3011040c10a0b9a8325906f8b37150df020110802ba94e0e7bde2e171e1c7aa4f5544b203d5f75c874e3911cc292595ef79286377b9c15880a29e8f112d8f577".as_bytes();
@@ -45,7 +46,7 @@ mod crypto_config_generator {
     }
 
     /// config.json 생성 함수
-    fn generate_config_json(mut crypto_config: CryptoConfig, param_output_format: Option<OutputFormat>) {
+    fn generate_config_json(mut crypto_config: CryptoConfig, param_hash_key: Option<String>, param_output_format: Option<OutputFormat>) {
         // println!("{:?}", kms_service);
         let seed_byte = if crypto_config.crypto_type == Some(CryptoType::AWS.to_string()) {
             crypto_util::rand_bytes(16) // AWS 타입: 16바이트
@@ -64,6 +65,7 @@ mod crypto_config_generator {
 
         let key = crypto_config.clone().key.unwrap_or_else(|| hex::encode(cred_key_vec.clone()));
         let iv = crypto_config.clone().iv.unwrap_or_else(|| hex::encode(cred_iv_vec.clone()));
+        let output_format = param_output_format.unwrap_or(OutputFormat::b64);
         println!("seed_byte {:?}", hex::encode(seed_byte.clone()));
         println!("key {:?}", key.clone());
         println!("iv {:?}", iv.clone());
@@ -72,12 +74,18 @@ mod crypto_config_generator {
             .map_err(|e| format!("{:?}", e)).unwrap();
         // crypto_config.seed = Some(token.clone());
         // println!("{:?}", encode_base64(&token));
-        let output_format = param_output_format.unwrap_or(OutputFormat::h16);
         println!("key: {:?}, iv: {:?}", key, iv);
 
         // Credential 은 넘어온 Key, IV 값으로 생성
-        let crypto_cipher_spec = CryptoCipherSpec::new(key.as_bytes(), iv.as_bytes(), output_format);
+        let mut crypto_cipher_spec = vec![CryptoCipherSpec::new(100, key.as_bytes(), Some(iv.as_bytes()), output_format.clone())];
         // println!("{}", to_string_pretty(&crypto_cipher_spec).unwrap());
+
+        let hash_key = param_hash_key;
+        if hash_key.clone().is_some() {
+            crypto_cipher_spec.push(
+                CryptoCipherSpec::new(400, hash_key.clone().unwrap().as_bytes(), None, output_format)
+            );
+        };
 
         // let credencials_vec = crypto_util::encrypt(Algorithm::AES256, crypto_util::to_json_bytes(&crypto_cipher_spec).as_slice(), &crypto_cipher_spec.ky, &crypto_cipher_spec.iv)
         let credencials_vec = crypto_util::encrypt_algorithm(crypto_util::to_json_bytes(&crypto_cipher_spec).as_slice(), &cred_key_vec, &cred_iv_vec)
@@ -111,25 +119,27 @@ mod crypto_config_generator {
             aws_kms_key_arn: None,
             aws_access_key_id: None,
             aws_secret_access_key: None,
+            // key: Some(String::from("3974b3171e27aeba4543084e3d87c83eb4e8a27dc4209488c11c43464844f8ff")),
             // key: Some(String::from("8fc40b8e8aadbf4fe4cafe16dd52e1ea4a6abada47711097d59990eb4683b0cf")),
-            // key: Some(String::from("794839940f4d20dac1b6508a165d1c8a69f5dcc8c7ef5466f81ce1b0244c4e3c")),
-            key: Some(String::from("3974b3171e27aeba4543084e3d87c83eb4e8a27dc4209488c11c43464844f8ff")),
+            key: Some(String::from("794839940f4d20dac1b6508a165d1c8a69f5dcc8c7ef5466f81ce1b0244c4e3c")),
             iv: Some(String::from("00000000000000000000000000000000")),
             key_iteration: Some(10),
             iv_iteration: Some(10),
             seed: None,
             credential: None,
         };
-        // hotel
-        let output_format = Some(OutputFormat::b64);
+        // hash_key = Some(String::from("1746b1e8747fdd86d1dffda64a67bd74119cecbe63985bf5121fe0eadbcce03671d58c847a9e663825981e36e41e7ac3cb98c82b99b2ec78d770584b0bc5245c"));
+        // hash_key = Some(String::from("288663ad1f148d5a87af7d25947515a53fdeed65c4ddb506cf7e1aa70e6179855b114e235d9128125ec2f4be608afa276101dbe48cbf6e041ed0dd9048c3909e"));
+        let hash_key = Some(String::from("6efec156e4520c35dbb47ba0bfbf11f122076372b2f7cff8871ef17bc26e18d52b6cdf90d910dd4149e1c1b93b978daa3e4f6109a61e633bc584575a02e56f23"));
+        let output_format = Some(OutputFormat::default());
         // let output_format = Some(OutputFormat::h16);
-        generate_config_json(crypto_config, output_format);
+        generate_config_json(crypto_config, hash_key, output_format);
     }
 
     /// 생성된 config.json 파일을 읽어서 CryptoSession 을 생성 및 암복호화 테스트
     #[test]
     fn local_enc_dec_test() -> Result<(), String> {
-        let path_buf = path::absolute("src/resources/local/config.json").expect("Unable to get absolute path");
+        let path_buf = path::absolute("src/resources/default/config.json").expect("Unable to get absolute path");
         println!("path_buf {:?}", path_buf);
         let path = path_buf.as_path();
         let bytes = read_file_as_bytes(path).unwrap();
@@ -174,8 +184,24 @@ mod crypto_config_generator {
             Err(e) => return Err(e.to_string()),
         };
         */
+    }
 
+    /// 생성된 config.json 파일을 읽어서 EnigmaSession 을 생성 및 hash 테스트
+    #[test]
+    fn crypto_session_hash_test() -> Result<(), String> {
+        let path_buf = path::absolute("src/resources/default/config.json").expect("Unable to get absolute path");
+        // println!("{:?}", path_buf);
+        let path = path_buf.as_path();
+        let bytes = read_file_as_bytes(path).unwrap();
+        let session = match CryptoSession::of_byte(bytes.as_slice()) {
+            Ok(session) => session,
+            Err(e) => return Err(e.to_string()),
+        };
+        let hashed = session.encrypt_id("we are the champion".to_string(),400)
+            .map_err(|e| format!("{:?}", e))?;
+        println!("hashed: {:?}", hashed);
 
+        Ok(())
     }
 
     #[test]
@@ -195,6 +221,16 @@ mod crypto_config_generator {
         // let key = hmac::Key::new(HMAC_SHA512, &cred_key_vec);
         // let tag = hmac::sign(&key, &cred_key_vec);
         // println!("tag: {:?}", tag);
+    }
+
+    #[test]
+    fn hash_key_generator() {
+        let generate_hash_key = crypto_util::rand_bytes(64); //128 bytes
+        println!("Generate generate_hash_key {:?}", generate_hash_key.clone());
+        let hash_key = encode_base64(generate_hash_key.as_slice());
+        println!("hash_key {:?}", hash_key.clone());
+        let hash_key_hex = hex::encode(generate_hash_key.clone());
+        println!("hash_key_hex {:?}", hash_key_hex.clone());
     }
 
     #[test]
@@ -275,7 +311,7 @@ mod crypto_config_generator {
         let iv  = hex::decode(iv_str).unwrap();
         // 3. 평문 (Plaintext) 정의
         // let plaintext = "424287d41814926e0505920e5e8d0a1f88d7cc66a0413f900a5b55c9c07394a6c73778bdd28fb468b9675771a6bc714469f25349ac64cc5fdd747442a0caf95ace61494c539fd8e53cf40212".as_bytes();
-        let plaintext = "9c31d1e25ddd5ba6d48e00e6e8042a0b024a081c5b6027cd2cfb64c0ea4b2533e7e6b5b327b155a75dceb4c7557d66ea655cb2887f112cbab0c9c5029429a0106b18e8c1f20e656e9358bc17".as_bytes();
+        // let plaintext = "9c31d1e25ddd5ba6d48e00e6e8042a0b024a081c5b6027cd2cfb64c0ea4b2533e7e6b5b327b155a75dceb4c7557d66ea655cb2887f112cbab0c9c5029429a0106b18e8c1f20e656e9358bc17".as_bytes();
         let plaintext = "701c692edfff3532a74f90235b3e047b487c9dab05890688c930f0a30dff3c68e9c06a0d6c108bc6c09c789727fe79a88fb1643e2f8cb47ad2256d207ad602eacc91f9cd5e95d178a0d5e238".as_bytes();
 
         let cipher_vec = encode_aes_256_gcm(plaintext, key.as_slice(), iv.as_slice()).unwrap();
@@ -290,12 +326,9 @@ mod crypto_config_generator {
 
     #[test]
     fn decrypt_test() -> Result<(), String> {
-        // let cred_key = hex::decode("61fcd6ad85895d0e46a259757a3ed5054f472f049b22f40303ec3f8bae4d8d2a").unwrap();
-        // let cred_iv = hex::decode("204b2f52bc3d27bf0c4c60a2a185cfa0").unwrap();
-        // let credential_vec = decode_base64("ndvGY/0/KJJKgiwpjC3t0GJ20qMZmx02nD5KISdkbnd67xLKsL2aV/RyJRryripoc1JbT0OB2WyXZPQ+1PGkrlqR76U7T7Eunp1Prb+V9dwKCPwABCNr71yLDf5AI8b7nedrcpIB1xg+nWvYLqFJVtq7S6OJSYuoZQFDhZTAwK1Jf7MeBkrEoQhHKrlsY42ls/T5FSFtA5vBCwH/WkceWg==");
-        let cred_key = hex::decode("4a9004b3a0d945346c7321210f0dced07b4f942a5a5b11b071499e9d6eabf463").unwrap();
-        let cred_iv = hex::decode("674f174513547d9aeac7ab233381684c").unwrap();
-        let credential_vec = decode_base64("YtVnr4rsfxAQ/OGB7yrzoba9vrk+AjSbfihPbsrgUhNpCdg7GfB+tE9vkv/jV7jeWTT+5l1sWeI5zZZMEegR9bkkG6lMX2L1aJ4Oas6ciHYwdEcWvUlh0zsmkzaU7cnhC9ZNTxo5tGcgmjtw33Bd5B+AvN11ToWSXE4rjiXJyxTjBbFC1doBq7Nzy7n7HCxtxhthZ31HMNuaBt3ZLYv2ktcoC6zP7lPK");
+        let cred_key = hex::decode("61fcd6ad85895d0e46a259757a3ed5054f472f049b22f40303ec3f8bae4d8d2a").unwrap();
+        let cred_iv = hex::decode("204b2f52bc3d27bf0c4c60a2a185cfa0").unwrap();
+        let credential_vec = decode_base64("ndvGY/0/KJJKgiwpjC3t0GJ20qMZmx02nD5KISdkbnd67xLKsL2aV/RyJRryripoc1JbT0OB2WyXZPQ+1PGkrlqR76U7T7Eunp1Prb+V9dwKCPwABCNr71yLDf5AI8b7nedrcpIB1xg+nWvYLqFJVtq7S6OJSYuoZQFDhZTAwK1Jf7MeBkrEoQhHKrlsY42ls/T5FSFtA5vBCwH/WkceWg==");
         let decrypted =
             crypto_util::decrypt_algorithm(credential_vec.as_slice(), cred_key.as_slice(), cred_iv.as_slice())
                 .map_err(|e| e.to_string())?;
@@ -303,6 +336,5 @@ mod crypto_config_generator {
             .map_err(|e| CryptoError::SessionError(e.to_string()).to_string())?;
         println!("decrypted: {:?}", data);
         Ok(())
-
     }
 }

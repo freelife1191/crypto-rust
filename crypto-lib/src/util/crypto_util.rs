@@ -172,6 +172,18 @@ fn get_algorithm(key: &[u8]) -> CryptoResult<Algorithm> {
     Ok(algorithm)
 }
 
+pub fn hash(data: &[u8], key: &[u8]) -> CryptoResult<Vec<u8>> {
+    if key.len() < 64 {
+        let err_message = format!("Invalid key length: expected at least 64 bytes, got {}", key.len());
+        return Err(CryptoError::SessionError(err_message));
+    }
+    let mut context = digest::Context::new(&digest::SHA512);
+    context.update(&key);
+    context.update(data);
+    let digest = context.finish();
+    Ok(digest.as_ref().to_vec())
+}
+
 pub fn encode_base64(data: &[u8]) -> String {
     BASE64_STANDARD.encode(data)
 }

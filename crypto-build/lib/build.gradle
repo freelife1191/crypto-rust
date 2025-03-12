@@ -1,7 +1,7 @@
 def libname = "crypto-core"
-def defaultVersion = '0.0.1.RC1'
+def defaultVersion = '0.0.2.RC1'
 
-// -Pversion=0.0.1.RC1
+// -Pversion=0.0.2.RC1
 // 명령줄 버전 값 확인 (findProperty 사용)
 def inputVersion = project.findProperty('version')
 // 입력된 버전 값이 있으면 사용, 없으면 기본값 사용

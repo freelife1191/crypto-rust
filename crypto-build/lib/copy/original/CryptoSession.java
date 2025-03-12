@@ -33,6 +33,20 @@ public final class CryptoSession {
     }
     private static native String do_decrypt(long self, String encrypted) throws Exception;
 
+    public final String encrypt_id(int id, String plaintext) throws Exception {
+        String ret = do_encrypt_id(mNativeObj, id, plaintext);
+
+        return ret;
+    }
+    private static native String do_encrypt_id(long self, String plaintext, int id) throws Exception;
+
+    public final String decrypt_id(int id, String plaintext) throws Exception {
+        String ret = do_decrypt_id(mNativeObj, id, plaintext);
+
+        return ret;
+    }
+    private static native String do_decrypt_id(long self, String encrypted, int id) throws Exception;
+
     public synchronized void delete() {
         if (mNativeObj != 0) {
             do_delete(mNativeObj);
