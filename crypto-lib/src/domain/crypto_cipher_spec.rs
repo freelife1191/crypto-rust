@@ -36,13 +36,23 @@ pub struct CryptoCipherSpec {
 
 #[allow(unused)]
 impl CryptoCipherSpec {
-    pub fn new(id: i32, key: &[u8], iv: Option<&[u8]>, output_format: OutputFormat) -> Self {
+    pub fn new(id: i32, algorithm: Option<String>, key: &[u8], iv: Option<&[u8]>, output_format: OutputFormat) -> Self {
         let mut _ag = String::from("AES");
         let mut _bm = Some(String::from("CBC"));
         let mut _pm = Some(String::from("PKCS7"));
         let mut _iv = iv.and_then(|iv| hex::decode(iv).ok());
         if id == 400 {
-            _ag = String::from("SHA-512");
+            let alg_str = match algorithm {
+                Some(alg) => match alg.as_str() {
+                    "SHA-256" | "SHA256" => "SHA-256",
+                    "SHA-384" | "SHA384" => "SHA-384",
+                    "SHA-512" | "SHA512" => "SHA-512",
+                    "SHA-512_256" | "SHA512_256" => "SHA-512_256",
+                    _ => "SHA-512",
+                },
+                None => "SHA-512",
+            };
+            _ag = String::from(alg_str);
             _bm = None;
             _pm = None;
             _iv = None;
@@ -73,8 +83,8 @@ pub enum OutputFormat {
 impl OutputFormat {
     pub fn encoder(&self) -> fn(&[u8]) -> String {
         match self {
-            OutputFormat::h16 => |data: &[u8]| hex::encode(data),
-            OutputFormat::b64 => crypto_util::encode_base64
+            OutputFormat::b64 => crypto_util::encode_base64,
+            OutputFormat::h16 => |data: &[u8]| hex::encode(data)
         }
     }
 

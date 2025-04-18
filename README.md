@@ -62,9 +62,9 @@ Cross Compile 을 위해 `cross` 를 사용해 컴파일하며 `podman` 을 사�
 ---
 
 - [Rust 1.83.0](https://www.rust-lang.org/)
-- [Gradle 8.12.1](https://gradle.org/)
+- [Gradle 8.13](https://gradle.org/)
 - Java 9+
-- [Podman 5.3.2](https://podman.io/)
+- [Podman 5.4.1](https://podman.io/)
 - [flapigen 0.8.0](https://github.com/Dushistov/flapigen-rs)
 - [cross 0.2.5](https://github.com/cross-rs/cross)
 
@@ -111,19 +111,19 @@ $ cd crypto-build
 ```
 
 기본 빌드 및 jar 파일 생성
-- output 경로 `crypto-build/output/crypto-core-0.0.1.RC1.jar`
+- output 경로 `crypto-build/output/crypto-core-0.1.0.RC1.jar`
 
 ```shell
-$ ./gradlew :lib:clean :lib:build
+$ ./gradlew :lib:clean :lib:build --warning-mode all
 ```
 
 ### ► 지원되는 파라메터
 
 - `javaVersion`: java 버전이 8인지 아닌지를 구분하기 위한 파라메터
   - 8을 입력하면 JDK8 이상에서 사용가능한 라이브러리가 생성된다
-    - output: `crypto-core-jdk8-0.0.1.RC1.jar`
+    - output: `crypto-core-jdk8-0.1.0.RC1.jar`
   - 입력하지 않으면 기본값 11 적용되고 JDK11 이상에서 사용가능한 라이브러리가 생성된다
-    - output: `crypto-core-0.0.1.RC1.jar`
+    - output: `crypto-core-0.1.0.RC1.jar`
 - `version`: crypto 라이브러리 버전
   - 입력값대로 버전을 지정한다
   - 입력하지 않으면 기본 버전이 적용된다
@@ -132,17 +132,17 @@ $ ./gradlew :lib:clean :lib:build
 Gradle Build Command 파라메터 입력 예:
 
 ```shell
-# javaVersion 은 JDK8 라이브러리 버전은 0.0.1.RC1로 지정
-$ ./gradlew :lib:clean :lib:build -PjavaVersion=8 -Pversion=0.0.1.RC1
+# javaVersion 은 JDK8 라이브러리 버전은 0.1.0.RC1로 지정
+$ ./gradlew :lib:clean :lib:build -PjavaVersion=8 -Pversion=0.1.0.RC1 --warning-mode all
 
 # javaVersion 은 JDK8 라이브러리 버전은 기본 버전 지정
-$ ./gradlew :lib:clean :lib:build -PjavaVersion=8
+$ ./gradlew :lib:clean :lib:build -PjavaVersion=8 --warning-mode all
 
-# javaVersion 은 기본값인 JDK11 라이브러리 버전은 0.0.1.RC1로 지정
-$ ./gradlew :lib:clean :lib:build -Pversion=0.0.1.RC1
+# javaVersion 은 기본값인 JDK11 라이브러리 버전은 0.1.0.RC1로 지정
+$ ./gradlew :lib:clean :lib:build -Pversion=0.1.0.RC1 --warning-mode all
 
 # javaVersion 은 기본값인 JDK11 라이브러리 버전은 기본 버전 지정
-$ ./gradlew :lib:clean :lib:build
+$ ./gradlew :lib:clean :lib:build --warning-mode all
 ```
 
 output 경로:

@@ -1,17 +1,21 @@
 package com.freelife.crypto.core;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.freelife.util.EncryptUtils;
 import com.freelife.util.JsonUtils;
 import org.junit.jupiter.api.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * CryptoSession 기본 테스트
@@ -25,10 +29,7 @@ class CryptoSessionTest {
     @Order(1)
     void cryptoSessionDefaultTest() {
         CryptoSession session = new CryptoSession();
-        String plaintext = "Hello Crypto!";
-        String encrypt = session.encrypt(plaintext);
-        String decrypt = session.decrypt(encrypt);
-        assertThat(decrypt).isEqualTo(plaintext);
+        executeSessionTest(session);
     }
 
     @Test
@@ -36,44 +37,34 @@ class CryptoSessionTest {
     void cryptoSessionByPathTest() {
         Path path = Path.of("crypto", "config.json").toAbsolutePath();
         CryptoSession session = new CryptoSession(path.toString());
-        String plaintext = "Hello Crypto!";
-        String encrypt = session.encrypt(plaintext);
-        String decrypt = session.decrypt(encrypt);
-        assertThat(decrypt).isEqualTo(plaintext);
+        executeSessionTest(session);
     }
 
     @Test
     @Order(3)
     void cryptoSessionByInputStreamTest() throws IOException {
         Path path = Path.of("crypto", "config.json").toAbsolutePath();
-        String plaintext = "Hello Crypto!";
         assertThat(Files.exists(path)).isTrue();
         byte[] bytes = Files.newInputStream(path).readAllBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
         CryptoSession session = new CryptoSession(inputStream);
-        String encrypt = session.encrypt(plaintext);
-        String decrypt = session.decrypt(encrypt);
-        assertThat(decrypt).isEqualTo(plaintext);
+        executeSessionTest(session);
     }
 
     @Test
     @Order(4)
     void cryptoSessionByByteTest() throws IOException {
         Path path = Path.of("crypto", "config.json").toAbsolutePath();
-        String plaintext = "Hello Crypto!";
         assertThat(Files.exists(path)).isTrue();
         byte[] bytes = Files.newInputStream(path).readAllBytes();
         CryptoSession session = new CryptoSession(bytes);
-        String encrypt = session.encrypt(plaintext);
-        String decrypt = session.decrypt(encrypt);
-        assertThat(decrypt).isEqualTo(plaintext);
+        executeSessionTest(session);
     }
 
     @Test
     @Disabled
     @Order(5)
     void cryptoSessionByMapTest() throws Exception {
-        String plaintext = "Hello Crypto!";
         Path path = Path.of("crypto", "config.json").toAbsolutePath();
 
         byte[] bytes = Files.newInputStream(path).readAllBytes();
@@ -81,15 +72,12 @@ class CryptoSessionTest {
         Map<String, String> configMap = JsonUtils.getObjectMapper().readValue(inputStream, new TypeReference<>() {});
 
         CryptoSession session = new CryptoSession(configMap);
-        String encrypt = session.encrypt(plaintext);
-        String decrypt = session.decrypt(encrypt);
-        assertThat(decrypt).isEqualTo(plaintext);
+        executeSessionTest(session);
     }
 
     @Test
     @Order(6)
     void cryptoSessionByLocalMapTest() throws Exception {
-        String plaintext = "Hello Crypto!";
         Path path = Path.of("crypto", "config.json").toAbsolutePath();
 
         byte[] bytes = Files.newInputStream(path).readAllBytes();
@@ -97,16 +85,13 @@ class CryptoSessionTest {
         Map<String, String> configLocalMap = JsonUtils.getObjectMapper().readValue(inputStream, new TypeReference<>() {});
 
         CryptoSession session = new CryptoSession(configLocalMap, configLocalMap.get("key"), configLocalMap.get("iv"));
-        String encrypt = session.encrypt(plaintext);
-        String decrypt = session.decrypt(encrypt);
-        assertThat(decrypt).isEqualTo(plaintext);
+        executeSessionTest(session);
     }
 
     @Test
     @Disabled
     @Order(7)
     void cryptoSessionByArumentsTest() throws Exception {
-        String plaintext = "Hello Crypto!";
         Path path = Path.of("crypto", "config.json").toAbsolutePath();
 
         byte[] bytes = Files.newInputStream(path).readAllBytes();
@@ -120,15 +105,12 @@ class CryptoSessionTest {
         String credential = configMap.get("credential");
 
         CryptoSession session = new CryptoSession(awsKmsKeyArn, awsAccessKeyId, awsSecretAccessKey, seed, credential);
-        String encrypt = session.encrypt(plaintext);
-        String decrypt = session.decrypt(encrypt);
-        assertThat(decrypt).isEqualTo(plaintext);
+        executeSessionTest(session);
     }
 
     @Test
     @Order(8)
     void cryptoSessionByLocalArumentsTest() throws Exception {
-        String plaintext = "Hello Crypto!";
         Path path = Path.of("crypto", "config.json").toAbsolutePath();
 
         byte[] bytes = Files.newInputStream(path).readAllBytes();
@@ -141,8 +123,22 @@ class CryptoSessionTest {
         String credential = configMap.get("credential");
 
         CryptoSession session = new CryptoSession(key, iv, seed, credential);
+        executeSessionTest(session);
+    }
+
+    private void executeSessionTest(CryptoSession session) {
+        String plaintext = "Hello Crypto!";
         String encrypt = session.encrypt(plaintext);
         String decrypt = session.decrypt(encrypt);
-        assertThat(decrypt).isEqualTo(plaintext);
+        String hash = session.hash(plaintext);
+        String hashAlg = session.hash(plaintext, "SHA512");
+        String hashAlgKey = session.hash(plaintext, "SHA512_256", EncryptUtils.generateKey(16).getBytes(StandardCharsets.UTF_8));
+        // assertThat(decrypt).isEqualTo(plaintext);
+        assertAll(
+                () -> assertEquals(decrypt, plaintext),
+                () -> assertTrue(hash.length() >= 44),
+                () -> assertTrue(hashAlg.length() >= 88),
+                () -> assertTrue(hashAlgKey.length() >= 44)
+        );
     }
 }

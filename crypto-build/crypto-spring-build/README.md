@@ -58,6 +58,6 @@ repositories {
 
 ```groovy
 dependencies {
-    implementation 'com.freelife.crypto:crypto:0.0.1'
+    implementation 'com.freelife.crypto:crypto:0.1.0.RC1'
 }
 ```

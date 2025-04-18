@@ -17,7 +17,7 @@ public final class CryptoSession implements AutoCloseable {
     private volatile long mNativeObj;
 
     /**
-     * 기본 경로에 있는 config.json 파일을 읽어서 CryptoSession 객체를 생성합니다.
+     * 기본 경로에 있는 config.json 파일을 읽어서 CryptoSession 인스턴스를 생성합니다.
      * 기본 경로1: ${projectDir}/crypto/config.json
      * 기본 경로2: /var/opt/crypto/config.json
      */
@@ -187,6 +187,11 @@ public final class CryptoSession implements AutoCloseable {
         }
     }
 
+    /**
+     * Crypto Encrypt
+     * @param plaintext String to encrypt
+     * @return Encrypted data
+     */
     public String encrypt(String plaintext) {
         try {
             return do_encrypt(mNativeObj, plaintext);
@@ -195,6 +200,11 @@ public final class CryptoSession implements AutoCloseable {
         }
     }
 
+    /**
+     * Crypto Decrypt
+     * @param encrypted A string to decrypt
+     * @return Decrypted data
+     */
     public String decrypt(String encrypted) {
         try {
             return do_decrypt(mNativeObj, encrypted);
@@ -202,7 +212,14 @@ public final class CryptoSession implements AutoCloseable {
             throw new CryptoException(e.getMessage());
         }
     }
-
+    
+    /**
+     * Crypto Encrypt ID
+     * Classify Encrypt and HASH processing by ID
+     * @param plaintext String to encrypt
+     * @param id 100: Encrypt, 400: Hash
+     * @return Encrypted data
+     */
     public final String encrypt_id(String plaintext, int id) {
         if (id != 100 && id != 400)
             throw new CryptoException("Invalid ID: " + id + ", Available IDs: 100, 400");
@@ -212,11 +229,67 @@ public final class CryptoSession implements AutoCloseable {
             throw new CryptoException(e.getMessage());
         }
     }
+
+    /**
+     * Crypto Decrypt ID
+     * Classification of decryption and hash treatment with ID
+     * @param encrypted A string to decrypt
+     * @param id 100: Decrypt, 400: Hash
+     * @return Decrypted data
+     */
     public final String decrypt_id(String encrypted, int id) {
         if (id != 100 && id != 400)
             throw new CryptoException("Invalid ID: " + id + ", Available IDs: 100, 400");
         try {
             return do_decrypt_id(mNativeObj, encrypted, id);
+        } catch (Exception e) {
+            throw new CryptoException(e.getMessage());
+        }
+    }
+
+    /**
+     * Crypto Hash
+     * SHA256 Algorithm HASH processing without a hash key
+     * @param plaintext Hash to handle strings
+     * @return Hashed data
+     */
+    public final String hash(String plaintext) {
+        if (plaintext == null || plaintext.isEmpty()) return null;
+        try {
+            return do_hash(mNativeObj, plaintext);
+        } catch (Exception e) {
+            throw new CryptoException(e.getMessage());
+        }
+    }
+
+    /**
+     * Crypto Hash Algorithm
+     * SHA algorithms desired as a hash treatment without hash keys
+     * @param plaintext Hash to handle strings
+     * @param algorithm Input Available algorithm: SHA256, SHA384, SHA512, SHA512_256
+     * @return Hashed data
+     */
+    public final String hash(String plaintext, String algorithm) {
+        if (plaintext == null || plaintext.isEmpty()) return null;
+        try {
+            return do_hash_algorithm(mNativeObj, plaintext, algorithm);
+        } catch (Exception e) {
+            throw new CryptoException(e.getMessage());
+        }
+    }
+
+    /**
+     * Crypto Hash Key Algorithm
+     * @param plaintext Hash to handle strings
+     * @param algorithm Input Available algorithm: SHA256, SHA384, SHA512, SHA512_256
+     * @param key Hash Key byte
+     * @return Hashed data
+     */
+    public final String hash(String plaintext, String algorithm, byte[] key) {
+        if (plaintext == null || plaintext.isEmpty()) return null;
+        else if (key == null) return hash(plaintext, algorithm);
+        try {
+            return do_hash_algorithm_key(mNativeObj, plaintext, algorithm, key);
         } catch (Exception e) {
             throw new CryptoException(e.getMessage());
         }
@@ -250,6 +323,9 @@ public final class CryptoSession implements AutoCloseable {
     private static native String do_decrypt(long self, String encrypted) throws Exception;
     private static native String do_encrypt_id(long self, String plaintext, int id) throws Exception;
     private static native String do_decrypt_id(long self, String encrypted, int id) throws Exception;
+    private static native String do_hash(long self, String plaintext) throws Exception;
+    private static native String do_hash_algorithm(long self, String plaintext, String algorithm) throws Exception;
+    private static native String do_hash_algorithm_key(long self, String plaintext, String algorithm, byte[] key) throws Exception;
     private static native void do_delete(long me);
     /*package*/ CryptoSession(InternalPointerMarker marker, long ptr) {
         assert marker == InternalPointerMarker.RAW_PTR;

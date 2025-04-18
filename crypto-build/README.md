@@ -93,8 +93,11 @@ RUST_BACKTRACE=full cargo build -vv
 # Java 파일이 정상적으로 Generate가 안되면 `java_glue.rs.in` 파일에 변화를 주고 다시 빌드하면 잘 생성됨
 ./gradlew build -x test publish && jar tf lib/build/libs/lib.jar
 
-# JDK 8 버전으로 빌드
-./gradlew build -x test publish -PjavaVersion=8
+# JDK 1.8 버전으로 빌드 후 기본 버전으로 publish
+./gradlew clean build publish -PjavaVersion=8 --warning-mode all
+
+# JDK 8 버전으로 빌드 후 version 을 0.1.0.RC1로 publish
+./gradlew build -x test publish -PjavaVersion=8 -Pversion=0.1.0.RC1 --warning-mode all
 ```
 
 Window 

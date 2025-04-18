@@ -24,5 +24,3 @@ env_logger = "0.11"
 bindgen = { version = "0.71", default-features = false, features = ["logging", "runtime", "which-rustfmt"] }
 walkdir = "2"
 #rifgen = "*"
-
-[features]

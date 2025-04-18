@@ -19,6 +19,9 @@ foreign_class!(class CryptoSession {
     fn CryptoSession::decrypt(&self, encrypted: String) -> Result<String, String>;
     fn CryptoSession::encrypt_id(&self, plaintext: String, id: i32) -> Result<String, String>;
     fn CryptoSession::decrypt_id(&self, plaintext: String, id: i32) -> Result<String, String>;
+    fn CryptoSession::hash(&self, plaintext: String) -> Result<String, String>;
+    fn CryptoSession::hash_algorithm(&self, plaintext: String, algorithm_str: String) -> Result<String, String>;
+    fn CryptoSession::hash_algorithm_key(&self, plaintext: String, algorithm_str: String, key: &[u8]) -> Result<String, String>;
     foreign_code r#"
         static {
             try {

@@ -45,59 +45,49 @@ class CryptoConfigTest {
 
     @Test
     void cryptoSessionTest() {
-        String plaintext = "Hello Crypto!";
-        String encrypt = basicCryptoSession.encrypt(plaintext);
-        String decrypt = basicCryptoSession.decrypt(encrypt);
-        assertEquals(decrypt, plaintext);
+        executeSessionTest(basicCryptoSession);
     }
 
     @Test
     void hotelCryptoSessionTest() {
-        String plaintext = "Hello Crypto!";
-        String encrypt = hotelBasicCryptoSession.encrypt(plaintext);
-        String decrypt = hotelBasicCryptoSession.decrypt(encrypt);
-        assertEquals(decrypt, plaintext);
+        executeSessionTest(hotelBasicCryptoSession);
     }
 
     @Test
     void airCryptoSessionTest() {
-        String plaintext = "Hello Crypto!";
-        String encrypt = airBasicCryptoSession.encrypt(plaintext);
-        String decrypt = airBasicCryptoSession.decrypt(encrypt);
-        assertEquals(decrypt, plaintext);
+        executeSessionTest(airBasicCryptoSession);
     }
 
     @Test
     void hotelCryptoSessionAllTest() {
-        String plaintext = "Hello Crypto!";
-        String encrypt = basicCryptoSession.encrypt(plaintext);
-        String decrypt = basicCryptoSession.decrypt(encrypt);
-        String encryptHotel = hotelBasicCryptoSession.encrypt(plaintext);
-        String decryptHotel = hotelBasicCryptoSession.decrypt(encryptHotel);
-        String encryptAir = airBasicCryptoSession.encrypt(plaintext);
-        String decryptAir = airBasicCryptoSession.decrypt(encryptAir);
-        assertAll(
-            () -> assertEquals(decrypt, plaintext),
-            () -> assertEquals(decryptHotel, plaintext),
-            () -> assertEquals(decryptAir, plaintext)
-        );
+        executeSessionTest(basicCryptoSession);
+        executeSessionTest(hotelBasicCryptoSession);
+        executeSessionTest(airBasicCryptoSession);
     }
 
     @Test
     void cross_valication_test() {
         String plaintext = "Hello Crypto!";
+        executeSessionTest(hotelBasicCryptoSession);
+        executeSessionTest(airBasicCryptoSession);
         String encryptHotel = hotelBasicCryptoSession.encrypt(plaintext);
         String encryptAir = airBasicCryptoSession.encrypt(plaintext);
-        String decryptHotel = hotelBasicCryptoSession.decrypt(encryptHotel);
-        String decryptAir = airBasicCryptoSession.decrypt(encryptAir);
-        assertAll(
-            () -> assertEquals(decryptHotel, plaintext),
-            () -> assertEquals(decryptAir, plaintext)
-        );
         assertThrows(CryptoException.class, () -> {
             hotelBasicCryptoSession.decrypt(encryptAir);
             airBasicCryptoSession.decrypt(encryptHotel);
         });
+    }
+
+    private void executeSessionTest(CryptoSession session) {
+        String plaintext = "Hello Crypto!";
+        String encrypt = session.encrypt(plaintext);
+        String decrypt = session.decrypt(encrypt);
+        String hash = session.encrypt_id(plaintext, 400);
+        // assertThat(decrypt).isEqualTo(plaintext);
+        assertAll(
+            () -> assertEquals(decrypt, plaintext),
+            () -> assertTrue(hash.length() >= 88)
+        );
     }
 
 }

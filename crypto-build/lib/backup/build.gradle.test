@@ -1,7 +1,7 @@
 def libname = "crypto-core"
-def defaultVersion = '0.0.1.RC1'
+def defaultVersion = '0.1.0.RC1'
 
-// -Pversion=0.0.1.RC1
+// -Pversion=0.1.0.RC1
 // 명령줄 버전 값 확인 (findProperty 사용)
 def inputVersion = project.findProperty('version')
 // 입력된 버전 값이 있으면 사용, 없으면 기본값 사용
@@ -56,10 +56,19 @@ tasks.named('test') {
 def rustBasePath = rootProject.projectDir // 현재 프로젝트 경로
 
 /*
+
+// 1. ExecOperations 주입 인터페이스 생성
+interface ExecInjector {
+    @Inject
+    ExecOperations getExecOps()
+}
+
 //  execute cargo metadata and get path to target directory
 tasks.create(name: "cargo-output-dir", description: "Get cargo metadata") {
+    def execInjector = project.objects.newInstance(ExecInjector)
+    def execOps = execInjector.execOps
     new ByteArrayOutputStream().withStream { os ->
-        exec {
+        execOps.exec {
             commandLine 'cargo', 'metadata', '--format-version', '1'
             workingDir rustBasePath
             standardOutput = os
@@ -78,9 +87,11 @@ tasks.create(name: "cargo-output-dir", description: "Get cargo metadata") {
  */
 
 tasks.create(name: "print-path-env", description: "Print PATH environment variable") {
+    def execInjector = project.objects.newInstance(ExecInjector)
+    def execOps = execInjector.execOps
     doLast {
         def output = new ByteArrayOutputStream()
-        exec {
+        execOps.exec {
             commandLine 'sh', '-c', 'printenv PATH' // Use 'cmd', '/c', 'set PATH' on Windows
             standardOutput = output
         }

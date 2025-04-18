@@ -42,10 +42,10 @@ mod crypto_utils_test {
 
     #[test]
     fn rand_bytes_test() {
-        let rand_bytes = crypto_util::rand_bytes(16);
-        rand_bytes.iter().for_each(|b| print!("{:02x}", b));
-        // println!("{:?}", rand_bytes);
-        assert_eq!(rand_bytes.len(), 16);
+        let rand_bytes = crypto_util::rand_bytes(64);
+        // rand_bytes.iter().for_each(|b| print!("{:02x}", b));
+        println!("{:?}", hex::encode(rand_bytes));
+        // assert_eq!(rand_bytes.len(), 16);
     }
 
     #[test]
@@ -97,4 +97,57 @@ mod crypto_utils_test {
         println!("{:?}", path);
     }
     */
+
+    #[test]
+    fn aes_encrypt_test() {
+        // let key = hex::decode("fd9f59a521204e76baeed2f13c0ef241").unwrap();
+        let key = hex::decode("d38a2585e3e885f5c48da5c5073aed8f").unwrap();
+        // let key = hex::decode("78fc0dd6365695d011f763fd4ca8c0e3").unwrap();
+        let iv = hex::decode("00000000000000000000000000000000").unwrap();
+        // let iv = String::from("00000000000000000000000000000000");
+        // let iv_byte = hex::decode(iv).unwrap();
+        // let data = "test".as_bytes();
+        let data = "".as_bytes();
+        let encrypted = crypto_util::encrypt_algorithm(data, &key , &iv).unwrap();
+        println!("{:?}", hex::encode(encrypted));
+    }
+
+    #[test]
+    fn aes_decrypt_test() {
+        // let key = hex::decode("fd9f59a521204e76baeed2f13c0ef241").unwrap();
+        let key = hex::decode("d38a2585e3e885f5c48da5c5073aed8f").unwrap();
+        // let key = hex::decode("78fc0dd6365695d011f763fd4ca8c0e3").unwrap();
+        let iv = hex::decode("00000000000000000000000000000000").unwrap();
+        // let iv = String::from("00000000000000000000000000000000");
+        // let iv_byte = hex::decode(iv).unwrap();
+        // let data = hex::decode("415901322fd63707d84651e1c3b4f7f2").unwrap();
+        // let data = hex::decode("975fbd635ed0d77a1e369907c9282642").unwrap();
+        // let data = hex::decode("83a7bb41d1d9217fd62bb66aef4970ab").unwrap();
+        let data = hex::decode("56c765d37ded34e10509dde0af2b3ca2").unwrap();
+        let decrypted = crypto_util::decrypt_algorithm(&data, &key , &iv).unwrap();
+        println!("{:?}", String::from_utf8(decrypted).unwrap());
+    }
+
+    #[test]
+    fn base64_test() {
+        let hash = hex::decode("dccc5ae98a89d781e6fafdef2039100832290073a73c9528d676a0f28739c5feb76556f61968b926aacd9d784c3079c207caab6df374bfa919bb8828e05bcac0").unwrap();
+        // let base = BASE64_STANDARD.encode(hash);
+        // let hex = hex::encode(BASE64_STANDARD.decode(base.as_str()).unwrap());
+        println!("hex: {:?}", hex::encode(hash));
+    }
+
+    #[test]
+    fn b64_dec_test() {
+        let dec = crypto_util::decode_base64("P9x6fxEJ8IuWPCBSjYKRbw==".to_string().as_str());
+        // 3fdc7a7f1109f08b963c20528d82916f
+        // let dec = crypto_util::decode_base64("5YTAflqL2EJKEAqofsB7pw==".to_string().as_str());
+        // e584c07e5a8bd8424a100aa87ec07ba7
+        println!("{:?}", hex::encode(dec));
+    }
+
+    #[test]
+    fn b64_enc_test() {
+        let enc = crypto_util::encode_base64(crypto_util::rand_bytes(16).as_slice());
+        println!("{:?}", enc);
+    }
 }

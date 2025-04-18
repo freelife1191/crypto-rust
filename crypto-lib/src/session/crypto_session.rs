@@ -6,6 +6,7 @@ use crate::util::crypto_util;
 use crate::util::crypto_util::decode_aes_256_gcm;
 use std::path::Path;
 use std::string::String;
+use ring::digest::{Algorithm, SHA256, SHA384, SHA512, SHA512_256};
 
 #[allow(unused)]
 #[derive(Debug, Clone, Default)]
@@ -38,7 +39,6 @@ impl CryptoSession {
     pub fn encrypt(&self, plaintext: String) -> Result<String, String> {
         // println!("Encrypt algorithm={}, block_mode={}, padding_mode={}", self.ag, self.bm, self.pm);
         let crypto_cipher_spec = self.cipher_spec_enc.clone();
-        // println!("enigma_cipher_spec: {:?}", enigma_cipher_spec.clone());
         let _iv = match crypto_cipher_spec.iv.as_ref() {
             Some(iv) => iv.as_slice(),
             None => return Err("Initialization vector (IV) is missing".to_string()),
@@ -57,17 +57,18 @@ impl CryptoSession {
                 return Err(CryptoError::SessionError("Only Encrypt Config".to_string()).to_string());
             }
             let crypto_cipher_spec = self.cipher_spec_hash.clone();
-            let encrypted = crypto_util::hash(plaintext.as_bytes(), crypto_cipher_spec.ky.as_slice())
+            let algorithm = Self::get_hash_algorithm(crypto_cipher_spec.ag.clone())?;
+            let encrypted = crypto_util::hash(plaintext.as_bytes(), Some(crypto_cipher_spec.ky.as_slice()), algorithm)
                 .map_err(|e| e.to_string())?;
             return Ok(crypto_cipher_spec.clone().of.encoder()(encrypted.as_slice()));
         }
         Ok(self.encrypt(plaintext).map_err(|e| e.to_string())?)
     }
+    
 
     pub fn decrypt(&self, encrypted: String) -> Result<String, String> {
         // println!("Decrypt algorithm={}, block_mode={}, padding_mode={}", self.ag, self.bm, self.pm);
         let crypto_cipher_spec = self.cipher_spec_enc.clone();
-        // println!("enigma_cipher_spec: {:?}", enigma_cipher_spec.clone());
         let _iv = match crypto_cipher_spec.iv.as_ref() {
             Some(iv) => iv.as_slice(),
             None => return Err("Initialization vector (IV) is missing".to_string()),
@@ -94,6 +95,53 @@ impl CryptoSession {
         // let decrypt_decoded = self.of.decoder()();
         // println!("Encrypt Encoded: {:?}", encrypt_encoded);
         // encrypt_encoded
+    }
+
+    pub fn hash(&self, plaintext: String) -> Result<String, String> {
+        if plaintext.is_empty() {
+            return Ok(plaintext);
+        }
+        // println!("Hash plaintext={}", plaintext);
+        let encrypted = crypto_util::hash(plaintext.as_bytes(), None, &SHA256)
+            .map_err(|e| e.to_string())?;
+        Ok(crypto_util::encode_base64(encrypted.as_slice()))
+    }
+
+    pub fn hash_algorithm(&self, plaintext: String, algorithm_str: String) -> Result<String, String> {
+        if plaintext.is_empty() {
+            return Ok(plaintext);
+        }
+        // println!("Hash plaintext={}, algorithm_str={}", plaintext, algorithm_str);
+        let algorithm = Self::get_hash_algorithm(algorithm_str)?;
+        let encrypted = crypto_util::hash(plaintext.as_bytes(), None, algorithm)
+            .map_err(|e| e.to_string())?;
+        Ok(crypto_util::encode_base64(encrypted.as_slice()))
+    }
+
+    pub fn hash_algorithm_key(&self, plaintext: String, algorithm_str: String, key: &[u8]) -> Result<String, String> {
+        if plaintext.is_empty() {
+            return Ok(plaintext);
+        }
+        // println!("Hash plaintext={}, algorithm_str={}", plaintext, algorithm_str);
+        let algorithm = Self::get_hash_algorithm(algorithm_str)?;
+        let encrypted = crypto_util::hash(plaintext.as_bytes(), Some(key), algorithm)
+            .map_err(|e| e.to_string())?;
+        // println!("Hash encrypted={:?}", hex::encode(encrypted.as_slice()));
+        Ok(crypto_util::encode_base64(encrypted.as_slice()))
+    }
+
+    fn get_hash_algorithm<'a>(algorithm_str: String) -> Result<&'a Algorithm, String> {
+        let alg_string = algorithm_str.trim().to_uppercase();
+        let alg_str = alg_string.as_str();
+        let algorithm = match alg_str {
+            "SHA-256" | "SHA256" => &SHA256,
+            "SHA-384" | "SHA384" => &SHA384,
+            "SHA-512" | "SHA512" => &SHA512,
+            "SHA-512_256" | "SHA512_256" => &SHA512_256,
+            _ => return Err("Invalid Algorithm Type".to_string()),
+            // _ => &SHA512,
+        };
+        Ok(algorithm)
     }
 
     // 경로지정 + json 파일로 config 를 받을 수도 있게
@@ -157,7 +205,6 @@ impl CryptoSession {
         // println!("CryptoConfig: {:#?}", &crypto_config);
         let crypto_session = Self::get_cipher_spec_vec(crypto_config.clone())
             .map_err(|e| e.to_string())?;
-        // println!("enigma_session: {:#?}", &enigma_session);
         Ok(crypto_session)
     }
 
@@ -192,7 +239,7 @@ impl CryptoSession {
                 session_type: CryptoSessionType::ENC_HASH,
                 cipher_spec_vec: vec.clone(),
                 cipher_spec_enc: vec.iter().filter(|it| it.id == 100).next().ok_or_else(|| CryptoError::SessionError("Encryption(100) spec not found".to_string()).to_string())?.clone(),
-                cipher_spec_hash: vec.iter().filter(|it| it.id == 400).next().ok_or_else(|| CryptoError::SessionError("Hash(400) spec not found".to_string()).to_string())?.clone(),
+                cipher_spec_hash: vec.iter().filter(|it| it.id == 400).cloned().next().unwrap_or_else(|| CryptoCipherSpec::default()).clone()
             },
             Err(_) => {
                 let enc: CryptoCipherSpec = serde_json::from_slice(credential_vec.as_slice())

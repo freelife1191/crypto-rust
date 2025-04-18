@@ -39,6 +39,7 @@ ring = "0.17"
 walkdir = "2"
 aes-gcm = "0.10"
 hmac = "0.12.1"
+cipher = "0.4.4"
 
 [features]
 #default = ["block-padding", "base64", "hex"]

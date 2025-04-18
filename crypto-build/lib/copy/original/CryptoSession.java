@@ -47,6 +47,27 @@ public final class CryptoSession {
     }
     private static native String do_decrypt_id(long self, String encrypted, int id) throws Exception;
 
+    public final String hash(int id, String plaintext) throws Exception {
+        String ret = do_hash(mNativeObj, plaintext);
+
+        return ret;
+    }
+    private static native String do_hash(long self, String plaintext) throws Exception;
+
+    public final String hash_algorithm(int id, String plaintext, String algorithm) throws Exception {
+        String ret = do_hash_algorithm(mNativeObj, plaintext, algorithm);
+
+        return ret;
+    }
+    private static native String do_hash_algorithm(long self, String plaintext, String algorithm) throws Exception;
+
+    public final String hash_algorithm_key(int id, String plaintext, String algorithm, byte[] key) throws Exception {
+        String ret = do_hash_algorithm_key(mNativeObj, plaintext, algorithm, byte[] key);
+
+        return ret;
+    }
+    private static native String do_hash_algorithm_key(long self, String plaintext, String algorithm, byte[] key) throws Exception;
+
     public synchronized void delete() {
         if (mNativeObj != 0) {
             do_delete(mNativeObj);

@@ -1,7 +1,7 @@
 def libname = "crypto-core"
-def defaultVersion = '0.0.2.RC1'
+def defaultVersion = '0.1.0.RC1'
 
-// -Pversion=0.0.2.RC1
+// -Pversion=0.1.0.RC1
 // 명령줄 버전 값 확인 (findProperty 사용)
 def inputVersion = project.findProperty('version')
 // 입력된 버전 값이 있으면 사용, 없으면 기본값 사용
@@ -55,10 +55,18 @@ tasks.named('test') {
 // def rustBasePath = project.projectDir // 현재 프로젝트 경로
 def rustBasePath = rootProject.projectDir // 현재 프로젝트 경로
 
+// 1. ExecOperations 주입 인터페이스 생성
+interface ExecInjector {
+    @Inject
+    ExecOperations getExecOps()
+}
+
 //  execute cargo metadata and get path to target directory
 tasks.create(name: "cargo-output-dir", description: "Get cargo metadata") {
+    def execInjector = project.objects.newInstance(ExecInjector)
+    def execOps = execInjector.execOps
     new ByteArrayOutputStream().withStream { os ->
-        exec {
+        execOps.exec {
             commandLine 'cargo', 'metadata', '--format-version', '1'
             workingDir rustBasePath
             standardOutput = os
@@ -82,20 +90,25 @@ tasks.create(name: "delete-rust-java", type: Delete, dependsOn: "cargo-output-di
 
 // -PjavaVersion=8
 tasks.create(name: "native-java-change", type: Copy, dependsOn: "delete-rust-java") {
+    def commonDir = layout.projectDirectory.dir('copy/common')
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     println "native-java-change"
     //def envVar = System.getenv('JAVA_VERSION')
     def sourcePaths = []
     if (javaVersion == '8') {
-        sourcePaths = ['copy/version8', 'copy/common']
+        //sourcePaths = ['copy/version_1_8', 'copy/common']
+        from layout.projectDirectory.dir('copy/version8')
     } else {
-        sourcePaths = ['copy/other', 'copy/common']
+        // sourcePaths = ['copy/other', 'copy/common']
+        from layout.projectDirectory.dir('copy/other')
     }
     // 여러 경로의 파일을 복사
     sourcePaths.each { sourcePath ->
         from sourcePath // 복사할 파일이 있는 경로
     }
-    into 'src/main/java/com/freelife/crypto/core' // 파일을 복사할 대상 경로
+    from commonDir
+    //into 'src/main/java/com/freelife/crypto/core' // 파일을 복사할 대상 경로
+    into layout.projectDirectory.dir('src/main/java/com/freelife/crypto/core') // 파일을 복사할 대상 경로
     include '**/*.java' // 복사할 파일의 확장자
 }
 
@@ -112,19 +125,10 @@ tasks.named('compileJava') {
 tasks.withType(Jar) {
     dependsOn tasks.named('native-java-change')
     doLast {
-        def jarFile = file("${buildDir}/libs/lib-${project.version}.jar")
+        def jarFile = file("${buildDir}/libs/lib-${version}.jar")
         def outputDir = file("${rootProject.projectDir}/output")
-        def libraryFilename = ""
-        if (javaVersion == '8') {
-            libraryFilename = "${outputDir}/${libname}-jdk8-${project.version}.jar"
-        } else {
-            libraryFilename = "${outputDir}/${libname}-${project.version}.jar"
-        }
+        def libraryFilename = javaVersion == '8' ? "${libname}-jdk8-${version}.jar" : "${libname}-${version}.jar"
         def outputFile = file(libraryFilename)
-
-        if (!outputDir.exists()) {
-            outputDir.mkdirs()
-        }
 
         copy {
             from jarFile

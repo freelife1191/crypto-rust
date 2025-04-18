@@ -61,7 +61,7 @@ publishing {
       mavenJava(MavenPublication) {
           groupId = 'com.freelife.crypto'
           artifactId = 'crypto'
-          version = '0.0.1'
+          version = '0.1.0.RC1'
           from components.java
 
           pom {
@@ -136,6 +136,6 @@ repositories {
 
 // gradle dependency 추가
 dependencies {
-    implementation 'com.freelife.crypto:crypto:0.0.1'
+    implementation 'com.freelife.crypto:crypto:0.1.0.RC1'
 }
 ```

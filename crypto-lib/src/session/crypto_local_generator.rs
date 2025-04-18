@@ -28,78 +28,90 @@ mod crypto_config_generator {
             //let seed_hex = "0102020078eaeb9a15eee4a08a9ca09c1f94ff682c9ffb8ff4b3a80a7bbee8bdb8c4b373d701229b983282ac6a42f5760fdb95b90dbf0000006e306c06092a864886f70d010706a05f305d020100305806092a864886f70d010701301e060960864801650304012e3011040c10a0b9a8325906f8b37150df020110802ba94e0e7bde2e171e1c7aa4f5544b203d5f75c874e3911cc292595ef79286377b9c15880a29e8f112d8f577".as_bytes();
             Ok(cipher_vec) // seed_base64
         } else {
-            let seed_hex = hex::encode(seed_byte);
-            println!("원본 데이터: {:?}", seed_hex.clone());
+            // let seed_hex = hex::encode(seed_byte);
+            // println!("원본 데이터: {:?}", seed_hex.clone());
             // let seed_byte = seed_byte.to_vec();
             let key = hex::decode(key).map_err(|e| format!("{:?}", e))?;
             let iv = hex::decode(iv).map_err(|e| format!("{:?}", e))?;
             let token = encode_aes_256_gcm(seed_byte, key.as_slice(), iv.as_slice()).unwrap();
                 // .map_err(|e| format!("{:?}", e))?;
-            println!("암호화된 데이터: {}", encode_base64(token.as_ref()));
+            // println!("암호화된 데이터: {}", encode_base64(token.as_ref()));
 
-            let decrypted = decode_aes_256_gcm(token.as_slice(), key.as_slice(), iv.as_slice()).unwrap();
+            // let decrypted = decode_aes_256_gcm(token.as_slice(), key.as_slice(), iv.as_slice()).unwrap();
                 // .map_err(|e| format!("{:?}", e))?;
             // println!("복호화된 데이터: {}", String::from_utf8_lossy(&decrypted));
-            println!("복호화된 데이터: {:?}", hex::encode(decrypted.clone()));
+            // println!("복호화된 데이터: {:?}", hex::encode(decrypted.clone()));
             Ok(token)
         }
     }
 
+    #[allow(unused)]
+    struct EncryptConfig {
+        key: Option<String>,
+        iv: Option<String>,
+        output_format: OutputFormat,
+    }
+
+    #[allow(unused)]
+    #[derive(Debug)]
+    struct HashConfig {
+        algorithm: Option<String>,
+        hash_key: Option<String>,
+        output_format: OutputFormat,
+    }
+
     /// config.json 생성 함수
-    fn generate_config_json(mut crypto_config: CryptoConfig, param_hash_key: Option<String>, param_output_format: Option<OutputFormat>) {
+    fn generate_config_json(mut crypto_config: CryptoConfig, encrypt_config: EncryptConfig, hash_config: HashConfig) {
         // println!("{:?}", kms_service);
+        //== 임의의 seed 생성 (설정된 seed 가 없을때 임의로 발급받아서 사용)
         let seed_byte = if crypto_config.crypto_type == Some(CryptoType::AWS.to_string()) {
             crypto_util::rand_bytes(16) // AWS 타입: 16바이트
         } else {
             crypto_util::rand_bytes(76) // LOCAL 타입: 76바이트
         };
-
+        //== 임의의 Credential Key 생성 (설정된 Credential Key 가 없을때 사용)
         let cred_key_vec = crypto_util::digest("SHA-256", &seed_byte, 10)
             .map_err(|e| format!("{:?}", e)).unwrap();
+        //== 임의의 Credential IV 생성 (설정된 Credential IV 가 없을때 사용)
         let cred_iv_vec = crypto_util::digest("MD5", &seed_byte, 10)
             .map_err(|e| format!("{:?}", e)).unwrap();
-        println!("cred_key_vec: {:?}, cred_iv_vec: {:?}", hex::encode(cred_key_vec.clone()), hex::encode(cred_iv_vec.clone()));
+        // println!("cred_key_vec: {:?}, cred_iv_vec: {:?}", hex::encode(cred_key_vec.clone()), hex::encode(cred_iv_vec.clone()));
         //println!("cred key hex length: {:?}, iv hex length: {:?}", hex::encode(cred_key_vec.clone()).len(), hex::encode(cred_iv_vec.clone()).len());
         //println!("cred key: {:?}, iv: {:?}", cred_key_vec, cred_iv_vec);
         //println!("cred key length: {:?}, iv length: {:?}", cred_key_vec.len(), cred_iv_vec.len());
-
+        //== Credential Key (설정된 Credential Key 가 없으면 임의 생성된 Credential Key 사용)
         let key = crypto_config.clone().key.unwrap_or_else(|| hex::encode(cred_key_vec.clone()));
+        //== Credential IV (설정된 Credential IV 가 없으면 임의 생성된 Credential IV 사용)
         let iv = crypto_config.clone().iv.unwrap_or_else(|| hex::encode(cred_iv_vec.clone()));
-        let output_format = param_output_format.unwrap_or(OutputFormat::b64);
-        println!("seed_byte {:?}", hex::encode(seed_byte.clone()));
-        println!("key {:?}", key.clone());
-        println!("iv {:?}", iv.clone());
-        // 넘어온 Key, IV 값으로 Token 생성
+        // println!("key: {:?}, iv: {:?}", key, iv);
+        //== AES Credential CryptoCipherSpec 생성
+        let mut crypto_cipher_spec = vec![CryptoCipherSpec::new(100, None, key.as_bytes(), Some(iv.as_bytes()), encrypt_config.output_format)];
+        //== hash Credential CryptoCipherSpec 생성
+        // println!("Hash Config: {:#?}", hash_config);
+        let hash_key = hash_config.hash_key.unwrap_or_else(|| String::from(""));
+        crypto_cipher_spec.push(
+            CryptoCipherSpec::new(400, hash_config.algorithm, hash_key.as_bytes(), None, hash_config.output_format)
+        );
+        //== 넘어온 Key, IV 값으로 Token 생성
         let token = generate_token(crypto_config.clone(), &seed_byte, key.as_str(), iv.as_str())
             .map_err(|e| format!("{:?}", e)).unwrap();
         // crypto_config.seed = Some(token.clone());
         // println!("{:?}", encode_base64(&token));
-        println!("key: {:?}, iv: {:?}", key, iv);
-
-        // Credential 은 넘어온 Key, IV 값으로 생성
-        let mut crypto_cipher_spec = vec![CryptoCipherSpec::new(100, key.as_bytes(), Some(iv.as_bytes()), output_format.clone())];
-        // println!("{}", to_string_pretty(&crypto_cipher_spec).unwrap());
-
-        let hash_key = param_hash_key;
-        if hash_key.clone().is_some() {
-            crypto_cipher_spec.push(
-                CryptoCipherSpec::new(400, hash_key.clone().unwrap().as_bytes(), None, output_format)
-            );
-        };
-
-        // let credencials_vec = crypto_util::encrypt(Algorithm::AES256, crypto_util::to_json_bytes(&crypto_cipher_spec).as_slice(), &crypto_cipher_spec.ky, &crypto_cipher_spec.iv)
+        //== Credential Vector 생성 (CryptoCipherSpec 을 Credential Key 와 Credential IV 로 AES 암호화)
         let credencials_vec = crypto_util::encrypt_algorithm(crypto_util::to_json_bytes(&crypto_cipher_spec).as_slice(), &cred_key_vec, &cred_iv_vec)
             .map_err(|e| format!("{:?}", e)).unwrap();
-        println!("credencials_vec: {:?}", encode_base64(credencials_vec.as_slice()));
-        let credencials = encode_base64(credencials_vec.as_slice());
-        let decrypt = crypto_util::decrypt_algorithm(decode_base64(credencials.as_str()).as_slice(), &cred_key_vec, &cred_iv_vec)
-            .map_err(|e| format!("{:?}", e)).unwrap();
-        println!("decrypt: {:?}", String::from_utf8(decrypt.clone()).unwrap());
-
+        // println!("credencials_vec: {:?}", encode_base64(credencials_vec.as_slice()));
+        // let credencials = encode_base64(credencials_vec.as_slice());
+        // let decrypt = crypto_util::decrypt_algorithm(decode_base64(credencials.as_str()).as_slice(), &cred_key_vec, &cred_iv_vec)
+        //     .map_err(|e| format!("{:?}", e)).unwrap();
+        // println!("decrypt: {:?}", String::from_utf8(decrypt.clone()).unwrap());
+        //== Credential Vector 를 KMS로 암호화
         // let credencials = kms_service.encrypt(&credencials_vec)
         //     .map_err(|e| format!("{:?}", e)).unwrap();
+        //== 생성한 Credential 은 Crypto Config 에 저장
         crypto_config.credential = Some(credencials_vec.clone());
         // println!("{:#?}", crypto_config);
+        //== 최종 생성된 CryptoConfig 를 출력
         let local_config = LocalConfig {
             key: Some(key),
             iv: Some(iv),
@@ -120,20 +132,61 @@ mod crypto_config_generator {
             aws_access_key_id: None,
             aws_secret_access_key: None,
             // key: Some(String::from("3974b3171e27aeba4543084e3d87c83eb4e8a27dc4209488c11c43464844f8ff")),
-            // key: Some(String::from("8fc40b8e8aadbf4fe4cafe16dd52e1ea4a6abada47711097d59990eb4683b0cf")),
-            key: Some(String::from("794839940f4d20dac1b6508a165d1c8a69f5dcc8c7ef5466f81ce1b0244c4e3c")),
+            key: Some(String::from("8fc40b8e8aadbf4fe4cafe16dd52e1ea4a6abada47711097d59990eb4683b0cf")),
+            // key: Some(String::from("794839940f4d20dac1b6508a165d1c8a69f5dcc8c7ef5466f81ce1b0244c4e3c")),
             iv: Some(String::from("00000000000000000000000000000000")),
             key_iteration: Some(10),
             iv_iteration: Some(10),
             seed: None,
             credential: None,
         };
-        // hash_key = Some(String::from("1746b1e8747fdd86d1dffda64a67bd74119cecbe63985bf5121fe0eadbcce03671d58c847a9e663825981e36e41e7ac3cb98c82b99b2ec78d770584b0bc5245c"));
-        // hash_key = Some(String::from("288663ad1f148d5a87af7d25947515a53fdeed65c4ddb506cf7e1aa70e6179855b114e235d9128125ec2f4be608afa276101dbe48cbf6e041ed0dd9048c3909e"));
-        let hash_key = Some(String::from("6efec156e4520c35dbb47ba0bfbf11f122076372b2f7cff8871ef17bc26e18d52b6cdf90d910dd4149e1c1b93b978daa3e4f6109a61e633bc584575a02e56f23"));
-        let output_format = Some(OutputFormat::default());
-        // let output_format = Some(OutputFormat::h16);
-        generate_config_json(crypto_config, hash_key, output_format);
+        let encrypt_config = EncryptConfig {
+            key: crypto_config.key.clone(),
+            iv: crypto_config.iv.clone(),
+            output_format: OutputFormat::default(),
+        };
+        let hash_config = HashConfig {
+            // algorithm: Some(String::from("SHA-256")),
+            algorithm: None,
+            // hash_key: Some(String::from("1746b1e8747fdd86d1dffda64a67bd74119cecbe63985bf5121fe0eadbcce03671d58c847a9e663825981e36e41e7ac3cb98c82b99b2ec78d770584b0bc5245c")),
+            hash_key: Some(String::from("288663ad1f148d5a87af7d25947515a53fdeed65c4ddb506cf7e1aa70e6179855b114e235d9128125ec2f4be608afa276101dbe48cbf6e041ed0dd9048c3909e")),
+            // hash_key: Some(String::from("6efec156e4520c35dbb47ba0bfbf11f122076372b2f7cff8871ef17bc26e18d52b6cdf90d910dd4149e1c1b93b978daa3e4f6109a61e633bc584575a02e56f23")),
+            // hash_key: None,
+            output_format: OutputFormat::default(),
+        };
+        generate_config_json(crypto_config, encrypt_config, hash_config);
+    }
+
+    #[test]
+    fn seed_byte_generator() {
+        let rand_bytes = crypto_util::rand_bytes(16);
+        // rand_bytes.iter().for_each(|b| print!("{:02x}", b));
+        println!("{:?}", hex::encode(rand_bytes));
+        // assert_eq!(rand_bytes.len(), 64);
+    }
+
+    /// 생성된 config.json 파일을 읽어서 CryptoSession 을 생성 및 암복호화 테스트
+    #[test]
+    fn local_enc_dec_id_test() -> Result<(), String> {
+        let path_buf = path::absolute("src/resources/default/config.json").expect("Unable to get absolute path");
+        println!("path_buf {:?}", path_buf);
+        let path = path_buf.as_path();
+        let bytes = read_file_as_bytes(path).unwrap();
+        let session = match CryptoSession::of_byte(bytes.as_slice()) {
+            Ok(session) => session,
+            Err(e) => return Err(e.to_string()),
+        };
+        let encrypted = session.encrypt_id("Hello, world!".to_string(), 100)
+            .map_err(|e| format!("{:?}", e))?;
+        println!("Encrypted: {:?}", encrypted);
+
+        let decrypted = session.decrypt_id(encrypted, 100).map_err(|e| format!("{:?}", e))?;
+        println!("Decrypted: {:?}", decrypted);
+
+        let hashed = session.encrypt_id("we are the champion".to_string(), 400)
+            .map_err(|e| format!("{:?}", e))?;
+        println!("Hashed: {:?}", hashed);
+        Ok(())
     }
 
     /// 생성된 config.json 파일을 읽어서 CryptoSession 을 생성 및 암복호화 테스트
@@ -147,46 +200,20 @@ mod crypto_config_generator {
             Ok(session) => session,
             Err(e) => return Err(e.to_string()),
         };
-
         let encrypted = session.encrypt("Hello, world!".to_string())
             .map_err(|e| format!("{:?}", e))?;
         println!("Encrypted: {:?}", encrypted);
 
         let decrypted = session.decrypt(encrypted).map_err(|e| format!("{:?}", e))?;
         println!("Decrypted: {:?}", decrypted);
+
+        let hashed = session.hash("we are the champion".to_string())
+            .map_err(|e| format!("{:?}", e))?;
+        println!("Hashed: {:?}", hashed);
         Ok(())
-        /*
-        let session = match CryptoSession::of_byte(bytes.as_slice()) {
-            Ok(session) => session,
-            Err(e) => return Err(e.to_string()),
-        };
-        let session = match CryptoSession::create(path) {
-            Ok(session) => session,
-            Err(e) => return Err(e.to_string()),
-        };
-        let session = match CryptoSession::of_config(
-            JsonConfig {
-                aws_kms_key_arn: None,
-                aws_access_key_id: None,
-                aws_secret_access_key: None,
-                seed: Some(String::from("YYI19Iy6I0dFr+vW6HWkqre9s7JuCDWbcChNas3vU0JuUtxoG60t6Uk8l63pArjfWzOp4Q1sXuE7kJQaFeoU9u96H60SVWD2OZxSOJuYgSRleEoc7U03gjFxkTCS7sntVNBLQ0xn4jNynjxyjX0B4UyH7dgnE47BXR182CXNk0/tULcR0NoC/eJ3y7+qHHpixxo2ZXtDM49gTyswAYc0Y+w0se8rNrq5")),
-                credential: Some(String::from("rtdEXdoI26AYhLh92WBWPZn5dMQUXD/PkmmRAs5wXjzmCuGQdisx0n/cE2Nidkhz4GxcQzv3BWfuu20SxVZwufkkfJkSHhQGf80rwCSrXUzLIrzLGXs5vCuNeigacYur3H4zNJxz4sVyMnXuEE0MrfRb7kHLcX/ljl/SkYb0ptGCkQZN2WRUoYYq4c+NoIaFWK5jA8tozkV3R3VitRLKMw==")),
-            }
-        ) {
-            Ok(session) => session,
-            Err(e) => return Err(e.to_string()),
-        };
-        let session = match CryptoSession::of(String::from(""), String::from(""),String::from(""),
-                                              String::from("Xw21Azd62vh8W0NAxsCkpw=="),
-                                              String::from("J6WAjEbFZKay3j+j/TTbwtzJdS/fc8dCtKIOtDCeAU0f22nyZp0/RjzzvYrkt5TPnOxIzZ9hA3Y/fgZKcm4X+XG9w4puOqCdRurqohPW//8xTVtbXgSN1S/3IHnKv8ae5ah1vp5IOTRYSwS+c6N2zTptQYvhSRWjPPKTFpvv3Ifzz8zGauNHB62w38MX+9f3Hlw6H4XZnkA1g/m/AAF6eQ==")
-        ) {
-            Ok(session) => session,
-            Err(e) => return Err(e.to_string()),
-        };
-        */
     }
 
-    /// 생성된 config.json 파일을 읽어서 EnigmaSession 을 생성 및 hash 테스트
+    /// 생성된 config.json 파일을 읽어서 CryptoSession 을 생성 및 hash 테스트
     #[test]
     fn crypto_session_hash_test() -> Result<(), String> {
         let path_buf = path::absolute("src/resources/default/config.json").expect("Unable to get absolute path");
@@ -201,6 +228,45 @@ mod crypto_config_generator {
             .map_err(|e| format!("{:?}", e))?;
         println!("hashed: {:?}", hashed);
 
+        let no_key_hashed = session.hash("we are the champion".to_string())
+            .map_err(|e| format!("{:?}", e))?;
+        println!("no_key_hashed: {:?}", no_key_hashed);
+        Ok(())
+    }
+
+    /// 생성된 config.json 파일을 읽어서 CryptoSession 을 생성 및 hash 테스트
+    #[test]
+    fn crypto_session_hash_no_key_test() -> Result<(), String> {
+        let path_buf = path::absolute("src/resources/default/config.json").expect("Unable to get absolute path");
+        // println!("{:?}", path_buf);
+        let path = path_buf.as_path();
+        let bytes = read_file_as_bytes(path).unwrap();
+        let session = match CryptoSession::of_byte(bytes.as_slice()) {
+            Ok(session) => session,
+            Err(e) => return Err(e.to_string()),
+        };
+        let hashed = session.hash("we are the champion".to_string())
+            .map_err(|e| format!("{:?}", e))?;
+        // let hashed = session.hash("".to_string())
+        //     .map_err(|e| format!("{:?}", e))?;
+        println!("hashed: {:?}", hashed);
+        let hashed256 = session.hash_algorithm("we are the champion".to_string(), "SHA256".to_string())
+            .map_err(|e| format!("{:?}", e))?;
+        let hashed384 = session.hash_algorithm("we are the champion".to_string(), "SHA384".to_string())
+            .map_err(|e| format!("{:?}", e))?;
+        let hashed512 = session.hash_algorithm("we are the champion".to_string(), "SHA512".to_string())
+            .map_err(|e| format!("{:?}", e))?;
+        let hashed512_256 = session.hash_algorithm("we are the champion".to_string(), "SHA512_256".to_string())
+            .map_err(|e| format!("{:?}", e))?;
+        println!("hashed256: {:?}", hashed256);
+        println!("hashed384: {:?}", hashed384);
+        println!("hashed512: {:?}", hashed512);
+        println!("hashed512_256: {:?}", hashed512_256);
+
+        let bytes = [0u8; 16];
+        let hashed512_key = session.hash_algorithm_key("we are the champion".to_string(), "SHA512".to_string(), &bytes)
+            .map_err(|e| format!("{:?}", e))?;
+        println!("hashed512_key: {:?}", hashed512_key);
         Ok(())
     }
 

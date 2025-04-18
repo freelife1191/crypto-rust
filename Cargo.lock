@@ -726,6 +726,7 @@ dependencies = [
  "base64 0.22.1",
  "block-padding 0.4.0-rc.2",
  "cbc",
+ "cipher",
  "generic-array 1.1.1",
  "hex",
  "hmac",
